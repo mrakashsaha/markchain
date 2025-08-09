@@ -7,6 +7,11 @@ import AuthProvider from './contextAPI/AuthProvider.jsx';
 import MainLayout from './Layout/MainLayout.jsx';
 import UserLogin from './pages/user/UserLogin.jsx';
 
+import AdminLayout from './layout/AdminLayout.jsx';
+import AdminHome from './pages/admin/AdminHome.jsx';
+import RegisterStudent from './pages/admin/RegisterStudent.jsx';
+import RegisterTeacher from './pages/admin/RegisterTeacher.jsx';
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -15,9 +20,34 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <UserLogin></UserLogin>,
-      }
+      },
     ]
   },
+
+
+
+  // Admin routes
+    {
+    path: "/admin",
+    element: <AdminLayout></AdminLayout>,
+    children: [
+      {
+        path: "/admin",
+        element: <AdminHome></AdminHome>,
+      },
+      {
+        path: "/admin/register-student",
+        element: <RegisterStudent></RegisterStudent>
+      },
+      {
+        path: "/admin/register-teacher",
+        element: <RegisterTeacher></RegisterTeacher>,
+      },
+    ]
+  },
+
+
+
 ]);
 
 
