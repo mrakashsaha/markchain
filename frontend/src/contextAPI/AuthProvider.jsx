@@ -9,6 +9,7 @@ const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const [user, setUser] = useState(null);
+    const [userFlag, setUserFlag] = useState({});
 
 
     useEffect(() => {
@@ -49,13 +50,13 @@ const AuthProvider = ({ children }) => {
         loading,
         setUser,
         user,
+        userFlag, 
+        setUserFlag,
         setLoading,
         createAccountWithEmail,
         signInWithEmail,
         signOutFromAccount,
     }
-
-
 
     return (
         <AuthContext.Provider value={authInfo}>

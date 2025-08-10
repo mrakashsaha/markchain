@@ -1,9 +1,9 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import AdminSideBar from '../components/AdminSideBar';
 import DashboardNavbar from '../components/DashboardNavbar';
+import StudentSidebar from '../components/StudentSidebar';
+import { Outlet } from 'react-router-dom';
 
-const AdminLayout = () => {
+const StudentLayout = () => {
     return (
         <div className=''>
             <div className='fixed top-0 left-0 right-0 z-30'>
@@ -11,7 +11,7 @@ const AdminLayout = () => {
             </div>
             <div className=''>
                 <div className='fixed top-20 z-30'>
-                    <AdminSideBar></AdminSideBar>
+                    <StudentSidebar></StudentSidebar>
                 </div>
                 <div className='flex-grow shadow-md border-t-2 bg-base-200'>
                     <div className='p-8 lg:p-16 mt-20 lg:ml-60 min-h-dvh'>
@@ -23,4 +23,4 @@ const AdminLayout = () => {
     );
 };
 
-export default AdminLayout;
+export default StudentLayout;

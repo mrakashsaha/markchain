@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AdminNavbar = () => {
+const DashboardNavbar = () => {
     return (
         <div>
             <div className="navbar bg-base-100 shadow-sm">
@@ -36,4 +36,4 @@ const AdminNavbar = () => {
     );
 };
 
-export default AdminNavbar;
+export default DashboardNavbar;
