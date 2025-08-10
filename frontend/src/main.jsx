@@ -11,6 +11,9 @@ import AdminLayout from './layout/AdminLayout.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import RegisterStudent from './pages/admin/RegisterStudent.jsx';
 import RegisterTeacher from './pages/admin/RegisterTeacher.jsx';
+import StudentLayout from './layout/StudentLayout.jsx';
+import StudentHome from './pages/student/StudentHome.jsx';
+import ChangePassword from './pages/user/ChangePassword.jsx';
 
 const router = createBrowserRouter([
   {
@@ -21,13 +24,18 @@ const router = createBrowserRouter([
         path: "/",
         element: <UserLogin></UserLogin>,
       },
+
+      {
+        path: "/change-password",
+        element: <ChangePassword></ChangePassword>,
+      }
     ]
   },
 
 
 
   // Admin routes
-    {
+  {
     path: "/admin",
     element: <AdminLayout></AdminLayout>,
     children: [
@@ -46,6 +54,19 @@ const router = createBrowserRouter([
     ]
   },
 
+
+
+  // Admin routes
+  {
+    path: "/student",
+    element: <StudentLayout></StudentLayout>,
+    children: [
+      {
+        path: "/student",
+        element: <StudentHome></StudentHome>,
+      },
+    ]
+  },
 
 
 ]);

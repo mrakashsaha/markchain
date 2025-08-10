@@ -3,6 +3,9 @@ import { AuthContext } from '../../contextAPI/AuthContext';
 import { generateRandomPassword } from '../../functions/generateRandomPassword';
 import { nodeBackend } from '../../axios/axiosInstance';
 import Swal from "sweetalert2"
+import { doc, setDoc } from 'firebase/firestore';
+import { firestoreDB } from '../../firebase/firebaseConfig';
+
 
 const RegisterStudent = () => {
 
@@ -22,71 +25,84 @@ const RegisterStudent = () => {
 
         // Send data to your Firebase
         createAccountWithEmail(data.studentEmail, randomPass)
-            .then((userCredential) => {
+            .then(async (userCredential) => {
+
+                console.log(userCredential);
                 // Signed Up
                 if (userCredential.user.email) {
 
-                    nodeBackend.post("/sendEmail", { userEmail: userCredential.user.email, defaultPassword: randomPass })
-                        .then(res => {
-                            if (res.data.sucess) {
+                    //Save Flag to Firestore
+                    await setDoc(doc(firestoreDB, "usersCollection", userCredential.user.email), {
+                        email: userCredential.user.email,
+                        isDefaultPassword: true,
+                        role: "student"
+                    })
+                        .then(() => {
+                            nodeBackend.post("/sendEmail", { userEmail: userCredential.user.email, defaultPassword: randomPass })
+                                .then(res => {
+                                    if (res.data.sucess) {
 
-                                const Toast = Swal.mixin({
-                                    toast: true,
-                                    position: "top-end",
-                                    showConfirmButton: false,
-                                    timer: 3000,
-                                    timerProgressBar: true,
-                                    didOpen: (toast) => {
-                                        toast.onmouseenter = Swal.stopTimer;
-                                        toast.onmouseleave = Swal.resumeTimer;
-                                    }
-                                });
-                                Toast.fire({
-                                    icon: "success",
-                                    title: `${res.data.message}`,
-                                });
-                            }
-
-                            else {
-                                Swal.fire({
-                                    title: "Somthing Went Wrong",
-                                    text: `${res.data.message}`,
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonColor: "#3085d6",
-                                    cancelButtonColor: "#d33",
-                                    confirmButtonText: "Show Password"
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        Swal.fire({
-                                            title: "Please Note!",
-                                            text: `Your Password: ${randomPass}`,
-                                            icon: "info"
+                                        const Toast = Swal.mixin({
+                                            toast: true,
+                                            position: "top-end",
+                                            showConfirmButton: false,
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            didOpen: (toast) => {
+                                                toast.onmouseenter = Swal.stopTimer;
+                                                toast.onmouseleave = Swal.resumeTimer;
+                                            }
+                                        });
+                                        Toast.fire({
+                                            icon: "success",
+                                            title: `${res.data.message}`,
                                         });
                                     }
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.log(error)
-                            Swal.fire({
-                                title: "Somthing Went Wrong",
-                                text: `${error.message}`,
-                                icon: "warning",
-                                showCancelButton: true,
-                                confirmButtonColor: "#3085d6",
-                                cancelButtonColor: "#d33",
-                                confirmButtonText: "Show Password"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
+
+                                    else {
+                                        Swal.fire({
+                                            title: "Somthing Went Wrong",
+                                            text: `${res.data.message}`,
+                                            icon: "warning",
+                                            showCancelButton: true,
+                                            confirmButtonColor: "#3085d6",
+                                            cancelButtonColor: "#d33",
+                                            confirmButtonText: "Show Password"
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                Swal.fire({
+                                                    title: "Please Note!",
+                                                    text: `Your Password: ${randomPass}`,
+                                                    icon: "info"
+                                                });
+                                            }
+                                        });
+                                    }
+                                })
+                                .catch(error => {
+                                    console.log(error)
                                     Swal.fire({
-                                        title: "Please Note!",
-                                        text: `Your Password: ${randomPass}`,
-                                        icon: "info"
+                                        title: "Somthing Went Wrong",
+                                        text: `${error.message}`,
+                                        icon: "warning",
+                                        showCancelButton: true,
+                                        confirmButtonColor: "#3085d6",
+                                        cancelButtonColor: "#d33",
+                                        confirmButtonText: "Show Password"
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            Swal.fire({
+                                                title: "Please Note!",
+                                                text: `Your Password: ${randomPass}`,
+                                                icon: "info"
+                                            });
+                                        }
                                     });
-                                }
-                            });
+                                })
                         })
+                        .catch((error) => {
+                            console.error("Error writing document: ", error);
+                        });
                 }
 
 
