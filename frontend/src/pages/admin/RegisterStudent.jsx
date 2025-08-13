@@ -5,6 +5,7 @@ import { nodeBackend } from '../../axios/axiosInstance';
 import Swal from "sweetalert2"
 import { doc, setDoc } from 'firebase/firestore';
 import { firestoreDB } from '../../firebase/firebaseConfig';
+import { addToIPFS } from '../../ipfsClient/ipfsCURD';
 
 
 const RegisterStudent = () => {
@@ -38,6 +39,16 @@ const RegisterStudent = () => {
                         role: "student"
                     })
                         .then(() => {
+                            
+                            // Send information to IPFS
+                            // const cid = await addToIPFS(data);
+                            // console.log("I am from registration page"+ cid);
+                            
+                            
+                            addToIPFS(data)
+                            .then(res=>console.log(res))
+                            .catch(error=>console.log(error))
+
                             nodeBackend.post("/sendEmail", { userEmail: userCredential.user.email, defaultPassword: randomPass })
                                 .then(res => {
                                     if (res.data.sucess) {
