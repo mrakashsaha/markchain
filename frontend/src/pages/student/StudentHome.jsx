@@ -14,7 +14,13 @@ function StudentHome() {
       
     }, [])
 
-    return <h1>Check console for IPFS CID</h1>;
+  
+      return (
+        <div>
+            <h1>Student Dashboard</h1>
+        <h1>Check console for IPFS CID</h1>;
 }
+        </div>
+    );
 
 export default StudentHome;
