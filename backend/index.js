@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const crypto = require('crypto');
 require('@dotenvx/dotenvx').config()
 const app = express()
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 
@@ -147,50 +148,50 @@ app.post('/decrypt', (req, res) => {
 
 // Encrypt Data for Multiple / Single User
 app.post('/encrypt', (req, res) => {
-  try {
-    const { data, recipients } = req.body;
+    try {
+        const { data, recipients } = req.body;
 
-    if (!data || !recipients || recipients.length === 0) {
-      return res.status(400).json({ error: 'Missing data or recipients.' });
+        if (!data || !recipients || recipients.length === 0) {
+            return res.status(400).json({ error: 'Missing data or recipients.' });
+        }
+
+        // 1) Convert JSON to string
+        const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
+
+        // 2) Generate random AES key + IV
+        const aesKey = crypto.randomBytes(32);
+        const iv = crypto.randomBytes(12);
+
+        // 3) AES-GCM encrypt
+        const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
+        const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+        const authTag = cipher.getAuthTag();
+
+        // 4) Encrypt AES key for each recipient
+        const encryptedKeys = recipients.map(r => {
+            const encryptedKey = crypto.publicEncrypt(
+                {
+                    key: r.publicKey,
+                    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+                    oaepHash: 'sha256'
+                },
+                aesKey
+            );
+            return { recipientId: r.id, encryptedKey: encryptedKey.toString('base64') };
+        });
+
+        // 5) Send encrypted package
+        res.json({
+            ciphertext: ciphertext.toString('base64'),
+            iv: iv.toString('base64'),
+            authTag: authTag.toString('base64'),
+            encryptedKeys
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Encryption failed', details: err.message });
     }
-
-    // 1) Convert JSON to string
-    const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
-
-    // 2) Generate random AES key + IV
-    const aesKey = crypto.randomBytes(32);
-    const iv = crypto.randomBytes(12);
-
-    // 3) AES-GCM encrypt
-    const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
-    const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-
-    // 4) Encrypt AES key for each recipient
-    const encryptedKeys = recipients.map(r => {
-      const encryptedKey = crypto.publicEncrypt(
-        {
-          key: r.publicKey,
-          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-          oaepHash: 'sha256'
-        },
-        aesKey
-      );
-      return { recipientId: r.id, encryptedKey: encryptedKey.toString('base64') };
-    });
-
-    // 5) Send encrypted package
-    res.json({
-      ciphertext: ciphertext.toString('base64'),
-      iv: iv.toString('base64'),
-      authTag: authTag.toString('base64'),
-      encryptedKeys
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Encryption failed', details: err.message });
-  }
 });
 
 
@@ -289,9 +290,45 @@ app.post("/sendEmail", async (req, res) => {
 
 // ======================================
 
+// MondoDB Related Start ========================================
+const uri = `mongodb+srv://${process.env.dbUser}:${process.env.dbPass}@cluster0.r76srbb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
+});
 
 
+const usersCollection = client.db("markChainDB").collection("users");
 
+async function run() {
+    try {
+        // Connect the client to the server	(optional starting in v4.7)
+        await client.connect();
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+        app.get("/userInfo", async (req, res) => {
+
+            const query = {wallet : req.query.wallet}
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        })
+
+
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
+}
+run().catch(console.dir);
+
+// MondoDB Related END ========================================
 
 
 
