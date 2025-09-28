@@ -4,17 +4,23 @@ import { getFromIPFS } from "../../ipfsClient/ipfsCURD";
 
 
 function StudentHome() {
-    useEffect(()=> {
+    useEffect(() => {
 
 
-    getFromIPFS("QmU4sgSjFPc7vSPoENAQfbPAryKgwu3go9zBKcL44Q1Lhf")
-    .then ((result)=> console.log("d",result))
-    .catch((error)=>console.log(error))
+        getFromIPFS("QmU4sgSjFPc7vSPoENAQfbPAryKgwu3go9zBKcL44Q1Lhf")
+            .then((result) => console.log("d", result))
+            .catch((error) => console.log(error))
 
-      
+
     }, [])
 
-    return <h1>Check console for IPFS CID</h1>;
+
+    return (
+        <div>
+            <h1>Student Dashboard</h1>
+            <h1>Check console for IPFS CID</h1>;
+        </div>
+    );
 }
 
 export default StudentHome;
