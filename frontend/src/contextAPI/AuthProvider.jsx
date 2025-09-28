@@ -1,70 +1,69 @@
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
+
 import { AuthContext } from './AuthContext';
-import { auth } from '../firebase/firebaseConfig';
 import { useEffect, useState } from 'react';
 
 const AuthProvider = ({ children }) => {
 
+    const [account, setAccount] = useState(null);
+    const [loading, setLoading] = useState(true); // 🔹 loading state
 
-    const [loading, setLoading] = useState(true);
-
-    const [user, setUser] = useState(null);
-    const [userFlag, setUserFlag] = useState({});
-
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
+    const connectWallet = async () => {
+        if (window.ethereum) {
+            try {
+                const accounts = await window.ethereum.request({
+                    method: "eth_requestAccounts",
+                });
+                setAccount(accounts[0]);
                 setLoading(false);
-            } else {
-                console.log('no user found');
+            } catch (error) {
+                console.error("User rejected request", error);
                 setLoading(false);
             }
+        } else {
+            alert("MetaMask not installed!");
+            setLoading(false);
+        }
+    };
 
-            return () => unsubscribe();
-        });
+    const disconnectWallet = () => {
+        setAccount(null);
+    };
 
-    }, [user, loading]);
+    useEffect(() => {
+        const checkConnection = async () => {
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({
+                        method: "eth_accounts",
+                    });
+                    if (accounts.length > 0) {
+                        setAccount(accounts[0]);
+                    } else {
+                        setAccount(null);
+                    }
+                } catch (err) {
+                    console.error("Error checking connection:", err);
+                    setAccount(null);
+                }
+            }
+            setLoading(false); // 🔹 stop loading after check
+        };
 
-    console.log(user);
+        checkConnection();
 
-
-    const createAccountWithEmail = (email, password) => {
-
-        return createUserWithEmailAndPassword(auth, email, password)
-    }
-
-
-    const signInWithEmail = (email, password) => {
-        setLoading(true);
-        return signInWithEmailAndPassword(auth, email, password)
-    }
-
-
-    const changePassword = (newPassword) => {
-        setLoading(true);
-        return updatePassword(auth.currentUser, newPassword)
-    }
-
-
-    const signOutFromAccount = () => {
-        setLoading(true);
-        return signOut(auth);
-    }
-
+        if (window.ethereum) {
+            window.ethereum.on("accountsChanged", (accounts) => {
+                if (accounts.length > 0) {
+                    setAccount(accounts[0]);
+                } else {
+                    disconnectWallet();
+                }
+            });
+        }
+    }, []);
 
     const authInfo = {
-        loading,
-        setUser,
-        user,
-        userFlag, 
-        setUserFlag,
-        setLoading,
-        createAccountWithEmail,
-        signInWithEmail,
-        changePassword,
-        signOutFromAccount,
+        account, loading, connectWallet, disconnectWallet
     }
 
     return (

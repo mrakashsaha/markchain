@@ -2,18 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import AuthProvider from './contextAPI/AuthProvider.jsx';
 import MainLayout from './Layout/MainLayout.jsx';
-import UserLogin from './pages/user/UserLogin.jsx';
-
 import AdminLayout from './layout/AdminLayout.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
-import RegisterStudent from './pages/admin/RegisterStudent.jsx';
-import RegisterTeacher from './pages/admin/RegisterTeacher.jsx';
 import StudentLayout from './layout/StudentLayout.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
-import ChangePassword from './pages/user/ChangePassword.jsx';
+
+import ContinueWithMetaMask from './pages/user/ContinueWithMetaMask.jsx';
+import Register from './pages/user/Register.jsx';
 
 const router = createBrowserRouter([
   {
@@ -22,13 +19,13 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <UserLogin></UserLogin>,
+        element: <ContinueWithMetaMask></ContinueWithMetaMask>
       },
 
       {
-        path: "/change-password",
-        element: <ChangePassword></ChangePassword>,
-      }
+        path: "/register",
+        element: <Register></Register>,
+      },
     ]
   },
 
@@ -42,14 +39,6 @@ const router = createBrowserRouter([
       {
         path: "/admin",
         element: <AdminHome></AdminHome>,
-      },
-      {
-        path: "/admin/register-student",
-        element: <RegisterStudent></RegisterStudent>
-      },
-      {
-        path: "/admin/register-teacher",
-        element: <RegisterTeacher></RegisterTeacher>,
       },
     ]
   },
