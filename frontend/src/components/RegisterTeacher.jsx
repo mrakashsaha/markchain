@@ -2,7 +2,7 @@ import React from 'react';
 import Swal from "sweetalert2";
 
 
-const RegisterTeacher = () => {
+const RegisterTeacher = ({role, setRole}) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const form = e.target;
@@ -15,7 +15,7 @@ const RegisterTeacher = () => {
         // createAccountWithEmail(data.teacherEmail, randomPass)
         //     .then(async (userCredential) => {
         //         console.log(userCredential);
-                
+
         //         if (userCredential.user.email) {
         //             // Save teacher data to Firestore
         //             await setDoc(doc(firestoreDB, "usersCollection", userCredential.user.email), {
@@ -112,7 +112,7 @@ const RegisterTeacher = () => {
 
     return (
         <div>
-            <div className="">
+            <div className="bg-base-200 p-10">
                 <form onSubmit={handleSubmit}>
                     {/* Basic Information */}
                     <div className="fieldset">
@@ -182,7 +182,12 @@ const RegisterTeacher = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                        {role && (
+                            <button
+                                className="btn btn-wide btn-neutral mt-4"
+                                onClick={() => setRole(null)}>Back</button>
+                        )}
                         <button className="btn btn-wide btn-neutral mt-4">Register Teacher</button>
                     </div>
                 </form>

@@ -2,7 +2,7 @@ import React from 'react';
 import Swal from "sweetalert2"
 
 
-const RegisterStudent = () => {
+const RegisterStudent = ({ role, setRole }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -30,12 +30,12 @@ const RegisterStudent = () => {
         //                 role: "student"
         //             })
         //                 .then(() => {
-                            
+
         //                     // Send information to IPFS
         //                     // const cid = await addToIPFS(data);
         //                     // console.log("I am from registration page"+ cid);
-                            
-                            
+
+
         //                     addToIPFS(data)
         //                     .then(res=>console.log(res))
         //                     .catch(error=>console.log(error))
@@ -132,7 +132,7 @@ const RegisterStudent = () => {
 
     return (
         <div>
-            <div className="">
+            <div className="bg-base-200 p-10">
                 <form onSubmit={handleSubmit}>
 
                     {/* Basic Information */}
@@ -212,8 +212,15 @@ const RegisterStudent = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
-                        <button className="btn btn-wide btn-neutral mt-4">Submit</button>
+                    <div className="flex justify-between">
+                        {role && (
+                            <button
+                                className="btn btn-wide btn-neutral mt-4"
+                                onClick={() => setRole(null)}
+                            >Back
+                            </button>
+                        )}
+                        <button className="btn btn-wide btn-neutral mt-4">Register as Student</button>
                     </div>
 
                 </form>
