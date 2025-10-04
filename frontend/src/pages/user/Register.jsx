@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import RegisterStudent from '../../components/RegisterStudent';
 import RegisterTeacher from '../../components/RegisterTeacher';
+import { PiStudent } from "react-icons/pi";
+import { PiChalkboardTeacherLight } from "react-icons/pi";
+
+
 
 const Register = () => {
     const [role, setRole] = useState(null);
@@ -19,20 +23,20 @@ const Register = () => {
                 <div className="hero-content text-neutral-content text-center">
                     <div className="w-7xl">
                         {!role && (
-                            <div className="card w-xl mx-auto bg-base-100 shadow-xl p-6">
-                                <h2 className="text-xl font-bold text-center mb-6">Register As</h2>
+                            <div className="card w-lg mx-auto glass shadow-xl p-6">
+                                <h2 className="text-xl font-bold text-center mb-6">Register as a Student or Teacher</h2>
                                 <div className="flex flex-col gap-4">
                                     <button
-                                        className="btn btn-primary"
+                                        className="btn btn-lg btn-primary"
                                         onClick={() => setRole("student")}
                                     >
-                                        Register as Student
+                                        I am a Student <PiStudent className='text-xl'></PiStudent>
                                     </button>
                                     <button
-                                        className="btn btn-secondary"
+                                        className="btn btn-lg btn-secondary"
                                         onClick={() => setRole("teacher")}
                                     >
-                                        Register as Teacher
+                                        I am a Teacher  <PiChalkboardTeacherLight className='text-xl'></PiChalkboardTeacherLight>
                                     </button>
                                 </div>
                             </div>

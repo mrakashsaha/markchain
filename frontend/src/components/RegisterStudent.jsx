@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Swal from "sweetalert2"
+import { AuthContext } from '../contextAPI/AuthContext';
 
 
 const RegisterStudent = ({ role, setRole }) => {
+    const { account, loading } = useContext(AuthContext);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -132,13 +134,19 @@ const RegisterStudent = ({ role, setRole }) => {
 
     return (
         <div>
-            <div className="bg-base-200 p-10">
+            <div className="glass p-10">
                 <form onSubmit={handleSubmit}>
 
                     {/* Basic Information */}
-                    <div className="fieldset">
-                        <label className="label">Full Name</label>
-                        <input name='studentName' type="text" className="input w-full" placeholder="Enter Student Name" required />
+                    <div className='flex gap-4'>
+                        <div className="flex-1 fieldset">
+                            <label className="label">Full Name</label>
+                            <input name='studentName' type="text" className="input w-full" placeholder="Enter Student Name" required />
+                        </div>
+                        <div className="flex-1 fieldset">
+                            <label className="label">Wallet Address</label>
+                            <input name='wallet' type="text" className="input w-full" value={loading ? "Loading..." : account} disabled required />
+                        </div>
                     </div>
 
 
