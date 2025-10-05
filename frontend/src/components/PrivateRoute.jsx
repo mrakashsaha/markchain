@@ -1,0 +1,48 @@
+import React, { useContext } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../contextAPI/AuthContext";
+import LoadingSpiner from "./LoadingSpiner";
+
+const PrivateRoute = ({ children }) => {
+  const { account, loading, userInfo } = useContext(AuthContext);
+  const location = useLocation();
+
+  // Still checking wallet/user status
+  if (loading) {
+    return <LoadingSpiner />;
+  }
+
+  // 🚫 If wallet not connected → redirect to homepage
+  if (!account) {
+    return <Navigate to="/" replace />;
+  }
+
+  // 🧩 Logic for /register route
+  if (location.pathname === "/register") {
+    // User already exists
+    if (userInfo) {
+      if (userInfo.isApproved === false) {
+        return <Navigate to="/pending" replace />;
+      } else {
+        return <Navigate to="/dashboard" replace />;
+      }
+    }
+  }
+
+  // 🧩 Logic for /pending route
+  if (location.pathname === "/pending") {
+    // Only unapproved users can view pending page
+    if (!userInfo) {
+      return <Navigate to="/register" replace />;
+    }
+
+    if (userInfo.isApproved === true) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  // ✅ Default: allow access
+  return children;
+};
+
+export default PrivateRoute;

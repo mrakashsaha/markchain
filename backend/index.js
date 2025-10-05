@@ -315,9 +315,32 @@ async function run() {
 
         app.get("/userInfo", async (req, res) => {
 
-            const query = {wallet : req.query.wallet}
+            const query = { walletAddress: req.query.wallet }
             const result = await usersCollection.findOne(query);
             res.send(result);
+        })
+
+
+        app.post("/register", async (req, res) => {
+            try {
+                const { userInfo } = req.body;
+
+                const duplicateWallet = await usersCollection.findOne({ walletAddress: userInfo.walletAddress })
+
+                if (duplicateWallet) {
+                    res.status(400).json({ sucess: false, message: "This wallet address is already registered." });
+
+                }
+                else {
+                    const result = await usersCollection.insertOne(userInfo);
+                    res.status(200).send(result);
+                }
+
+            }
+            catch (error) {
+                res.status(500).json({ sucess: false, message: "Internal Server Error" });
+                console.log(error)
+            }
         })
 
 

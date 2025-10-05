@@ -6,7 +6,7 @@ import metamaskLogo from "../assets/metamask_logo.svg"
 const NavBar = () => {
     const { account, loading } = useContext(AuthContext);
     return (
-        <div className='bg-base-100'>
+        <div className='bg-base-100 z-50 fixed top-0 right-0 left-0'>
             <div className="navbar max-w-7xl mx-auto  shadow-sm">
                 <div className="flex-1">
                     <Link to={"/"} className="text-xl">MarkChain</Link>
