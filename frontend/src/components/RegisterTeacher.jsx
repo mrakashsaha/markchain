@@ -1,116 +1,99 @@
 import React, { useContext } from 'react';
 import Swal from "sweetalert2";
 import { AuthContext } from '../contextAPI/AuthContext';
+import moment from 'moment';
+import { nodeBackend } from '../axios/axiosInstance';
+import { useNavigate } from 'react-router-dom';
 
 
 const RegisterTeacher = ({ role, setRole }) => {
-    const { account, loading } = useContext(AuthContext);
+    const { refreshUserInfo, account, loading } = useContext(AuthContext);
+    const navigate = useNavigate();
     const handleSubmit = (e) => {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
+        
+        // Convert FormData into an object
+        const userInfo = {
+            walletAddress: account,
+            createdAt: moment().toISOString(),
+            isApproved: false,
+            role: "teacher",
+            publicKey: null,
+            ...Object.fromEntries(formData.entries()),
+            experience: Number(formData.get("experience")),
+            specialization: formData
+                .get("specialization")
+                ?.split(",")
+                .map(item => item.trim()) || [],
 
-        console.log("Form Data:", data);
+        }
 
-        // Send data to Firebase
-        // createAccountWithEmail(data.teacherEmail, randomPass)
-        //     .then(async (userCredential) => {
-        //         console.log(userCredential);
+        nodeBackend.post("/register", { userInfo })
+            .then((res) => {
 
-        //         if (userCredential.user.email) {
-        //             // Save teacher data to Firestore
-        //             await setDoc(doc(firestoreDB, "usersCollection", userCredential.user.email), {
-        //                 email: userCredential.user.email,
-        //                 isDefaultPassword: true,
-        //                 role: "teacher",
-        //                 name: data.teacherName,
-        //                 subject: data.subject,
-        //                 phone: data.teacherPhone,
-        //                 gender: data.gender,
-        //                 bloodGroup: data.bloodGroup,
-        //                 qualification: data.qualification
-        //             })
-        //             .then(() => {
-        //                 nodeBackend.post("/sendEmail", { 
-        //                     userEmail: userCredential.user.email, 
-        //                     defaultPassword: randomPass 
-        //                 })
-        //                 .then(res => {
-        //                     if (res.data.success) {
-        //                         const Toast = Swal.mixin({
-        //                             toast: true,
-        //                             position: "top-end",
-        //                             showConfirmButton: false,
-        //                             timer: 3000,
-        //                             timerProgressBar: true,
-        //                             didOpen: (toast) => {
-        //                                 toast.onmouseenter = Swal.stopTimer;
-        //                                 toast.onmouseleave = Swal.resumeTimer;
-        //                             }
-        //                         });
-        //                         Toast.fire({
-        //                             icon: "success",
-        //                             title: `${res.data.message}`,
-        //                         });
-        //                     } else {
-        //                         showPasswordAlert(randomPass, res.data.message);
-        //                     }
-        //                 })
-        //                 .catch(error => {
-        //                     console.log(error);
-        //                     showPasswordAlert(randomPass, error.message);
-        //                 });
-        //             })
-        //             .catch((error) => {
-        //                 console.error("Error writing document: ", error);
-        //                 Swal.fire({
-        //                     icon: "error",
-        //                     title: "Error saving teacher data",
-        //                     text: error.message
-        //                 });
-        //             });
-        //         }
-        //     })
-        //     .catch((error) => {
-        //         console.log(error.code, error.message);
-        //         const Toast = Swal.mixin({
-        //             toast: true,
-        //             position: "top-end",
-        //             showConfirmButton: false,
-        //             timer: 3000,
-        //             timerProgressBar: true,
-        //             didOpen: (toast) => {
-        //                 toast.onmouseenter = Swal.stopTimer;
-        //                 toast.onmouseleave = Swal.resumeTimer;
-        //             }
-        //         });
-        //         Toast.fire({
-        //             icon: "error",
-        //             title: `${error.code}`,
-        //         });
-        //     });
+                console.log(res.data)
+                if (res.data.insertedId) {
+                    refreshUserInfo();
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "Your information has been submitted successfully."
+                    });
+
+                    navigate("/pending");
+
+                }
+
+                else {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "error",
+                        title: "Somthing Went Wrong!"
+                    });
+
+                }
+            })
+            .catch((error) => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "error",
+                    title: `${error?.response?.data?.message}`,
+                });
+            })
+
     };
-
-    // const showPasswordAlert = (password, message) => {
-    //     Swal.fire({
-    //         title: "Something Went Wrong",
-    //         text: message,
-    //         icon: "warning",
-    //         showCancelButton: true,
-    //         confirmButtonColor: "#3085d6",
-    //         cancelButtonColor: "#d33",
-    //         confirmButtonText: "Show Password"
-    //     }).then((result) => {
-    //         if (result.isConfirmed) {
-    //             Swal.fire({
-    //                 title: "Please Note!",
-    //                 text: `Temporary Password: ${password}`,
-    //                 icon: "info"
-    //             });
-    //         }
-    //     });
-    // };
 
     return (
         <div>
@@ -140,10 +123,68 @@ const RegisterTeacher = ({ role, setRole }) => {
                         </div>
                     </div>
 
+
+
                     <div className="flex gap-4">
                         <div className='fieldset flex-1'>
-                            <label className="label">Subject</label>
-                            <input name='subject' type="text" className="input w-full" placeholder="Enter Subject" required />
+                            <label className="label">Highest Qualification</label>
+                            <select name='qualification' defaultValue="Select Qualification" className="select w-full" required>
+                                <option disabled={true}>Select Qualification</option>
+                                <option value="PhD">PhD</option>
+                                <option value="Master's">Master's Degree</option>
+                                <option value="Bachelor's">Bachelor's Degree</option>
+                                <option value="Diploma">Diploma</option>
+                            </select>
+                        </div>
+
+                        <div className='fieldset flex-1'>
+                            <label className="label">Department / Major</label>
+                            <select
+                                name='department'
+                                defaultValue="Select Department / Major"
+                                className="select w-full"
+                                required
+                            >
+                                <option disabled={true}>Select Department / Major</option>
+                                <option value="CSE">Computer Science and Engineering (CSE)</option>
+                                <option value="EEE">Electrical and Electronic Engineering (EEE)</option>
+                                <option value="ECE">Electronics and Communication Engineering (ECE)</option>
+                                <option value="Civil">Civil Engineering</option>
+                                <option value="BBA">Business Administration (BBA)</option>
+                                <option value="English">English</option>
+                                <option value="Law">Law</option>
+                                <option value="Architecture">Architecture</option>
+                            </select>
+                        </div>
+
+                        <div className='fieldset flex-1'>
+                            <label className="label">Designation</label>
+                            <select
+                                name='designation'
+                                defaultValue="Select Designation"
+                                className="select w-full"
+                                required
+                            >
+                                <option disabled={true}>Select Designation</option>
+                                <option value="Lecturer">Lecturer</option>
+                                <option value="Senior Lecturer">Senior Lecturer</option>
+                                <option value="Assistant Professor">Assistant Professor</option>
+                                <option value="Associate Professor">Associate Professor</option>
+                                <option value="Professor">Professor</option>
+                                <option value="Head of Department">Head of Department</option>
+                            </select>
+                        </div>
+
+                        <div className='fieldset flex-1'>
+                            <label className="label">Years of Experience</label>
+                            <input name='experience' type="number" className="input w-full" placeholder="Enter years" required />
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <div className='fieldset flex-1'>
+                            <label className="label">Specialization</label>
+                            <input name='specialization' type="text" className="input w-full" placeholder="Ex: Data Science, Machine Learning" required />
                         </div>
 
                         <div className='fieldset flex-1'>
@@ -154,6 +195,12 @@ const RegisterTeacher = ({ role, setRole }) => {
                                 <option value="female">Female</option>
                                 <option value="other">Other</option>
                             </select>
+                        </div>
+
+                        <div className='fieldset flex-1'>
+                            <label className="label">Date of Birth</label>
+                            <input name='teacherDOB' type="date" className="input w-full" required />
+
                         </div>
 
                         <div className='fieldset flex-1'>
@@ -169,24 +216,6 @@ const RegisterTeacher = ({ role, setRole }) => {
                                 <option value="O+">O+</option>
                                 <option value="O-">O-</option>
                             </select>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className='fieldset flex-1'>
-                            <label className="label">Highest Qualification</label>
-                            <select name='qualification' defaultValue="Select Qualification" className="select w-full" required>
-                                <option disabled={true}>Select Qualification</option>
-                                <option value="PhD">PhD</option>
-                                <option value="Master's">Master's Degree</option>
-                                <option value="Bachelor's">Bachelor's Degree</option>
-                                <option value="Diploma">Diploma</option>
-                            </select>
-                        </div>
-
-                        <div className='fieldset flex-1'>
-                            <label className="label">Years of Experience</label>
-                            <input name='experience' type="number" className="input w-full" placeholder="Enter years" required />
                         </div>
                     </div>
 

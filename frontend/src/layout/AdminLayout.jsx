@@ -2,12 +2,13 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSideBar from '../components/AdminSideBar';
 import DashboardNavbar from '../components/DashboardNavbar';
+import NavBar from '../components/NavBar';
 
 const AdminLayout = () => {
     return (
         <div className=''>
             <div className='fixed top-0 left-0 right-0 z-30'>
-                <DashboardNavbar></DashboardNavbar>
+                <NavBar></NavBar>
             </div>
             <div className=''>
                 <div className='fixed top-20 z-30'>
