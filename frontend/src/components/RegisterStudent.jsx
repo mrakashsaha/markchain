@@ -1,10 +1,14 @@
 import React, { useContext } from 'react';
 import Swal from "sweetalert2"
 import { AuthContext } from '../contextAPI/AuthContext';
+import moment from "moment"
+import { nodeBackend } from '../axios/axiosInstance';
+import { useNavigate } from 'react-router-dom';
 
 
 const RegisterStudent = ({ role, setRole }) => {
-    const { account, loading } = useContext(AuthContext);
+    const {refreshUserInfo, account, loading } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -12,124 +16,83 @@ const RegisterStudent = ({ role, setRole }) => {
         const formData = new FormData(form);
 
         // Convert FormData into an object
-        const data = Object.fromEntries(formData.entries());
+        const userInfo = {
+            walletAddress: account,
+            createdAt: moment().toISOString(),
+            isApproved: false,
+            role: "student",
+            publicKey: null,
+            ...Object.fromEntries(formData.entries()),
+            hscRoll: Number(formData.get("hscRoll")),
+            hscCGPA: Number(formData.get("hscCGPA")),
 
-        console.log("Form Data:", data);
+        }
 
-
-        // Send data to your Firebase
-        // createAccountWithEmail(data.studentEmail, randomPass)
-        //     .then(async (userCredential) => {
-
-        //         console.log(userCredential);
-        //         // Signed Up
-        //         if (userCredential.user.email) {
-
-        //             //Save Flag to Firestore
-        //             await setDoc(doc(firestoreDB, "usersCollection", userCredential.user.email), {
-        //                 email: userCredential.user.email,
-        //                 isDefaultPassword: true,
-        //                 role: "student"
-        //             })
-        //                 .then(() => {
-
-        //                     // Send information to IPFS
-        //                     // const cid = await addToIPFS(data);
-        //                     // console.log("I am from registration page"+ cid);
+        console.log("Form Data:", userInfo);
 
 
-        //                     addToIPFS(data)
-        //                     .then(res=>console.log(res))
-        //                     .catch(error=>console.log(error))
+        nodeBackend.post("/register", { userInfo })
+            .then((res) => {
 
-        //                     nodeBackend.post("/sendEmail", { userEmail: userCredential.user.email, defaultPassword: randomPass })
-        //                         .then(res => {
-        //                             if (res.data.sucess) {
+                if (res.data.insertedId) {
+                    refreshUserInfo();
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "Your information has been submitted successfully."
+                    });
 
-        //                                 const Toast = Swal.mixin({
-        //                                     toast: true,
-        //                                     position: "top-end",
-        //                                     showConfirmButton: false,
-        //                                     timer: 3000,
-        //                                     timerProgressBar: true,
-        //                                     didOpen: (toast) => {
-        //                                         toast.onmouseenter = Swal.stopTimer;
-        //                                         toast.onmouseleave = Swal.resumeTimer;
-        //                                     }
-        //                                 });
-        //                                 Toast.fire({
-        //                                     icon: "success",
-        //                                     title: `${res.data.message}`,
-        //                                 });
-        //                             }
+                    navigate("/");
 
-        //                             else {
-        //                                 Swal.fire({
-        //                                     title: "Somthing Went Wrong",
-        //                                     text: `${res.data.message}`,
-        //                                     icon: "warning",
-        //                                     showCancelButton: true,
-        //                                     confirmButtonColor: "#3085d6",
-        //                                     cancelButtonColor: "#d33",
-        //                                     confirmButtonText: "Show Password"
-        //                                 }).then((result) => {
-        //                                     if (result.isConfirmed) {
-        //                                         Swal.fire({
-        //                                             title: "Please Note!",
-        //                                             text: `Your Password: ${randomPass}`,
-        //                                             icon: "info"
-        //                                         });
-        //                                     }
-        //                                 });
-        //                             }
-        //                         })
-        //                         .catch(error => {
-        //                             console.log(error)
-        //                             Swal.fire({
-        //                                 title: "Somthing Went Wrong",
-        //                                 text: `${error.message}`,
-        //                                 icon: "warning",
-        //                                 showCancelButton: true,
-        //                                 confirmButtonColor: "#3085d6",
-        //                                 cancelButtonColor: "#d33",
-        //                                 confirmButtonText: "Show Password"
-        //                             }).then((result) => {
-        //                                 if (result.isConfirmed) {
-        //                                     Swal.fire({
-        //                                         title: "Please Note!",
-        //                                         text: `Your Password: ${randomPass}`,
-        //                                         icon: "info"
-        //                                     });
-        //                                 }
-        //                             });
-        //                         })
-        //                 })
-        //                 .catch((error) => {
-        //                     console.error("Error writing document: ", error);
-        //                 });
-        //         }
+                }
 
+                else {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "error",
+                        title: "Somthing Went Wrong!"
+                    });
 
-        //     })
-        //     .catch((error) => {
-        //         console.log(error.code);
-        //         console.log(error.message);
-        //         const Toast = Swal.mixin({
-        //             toast: true,
-        //             position: "top-end",
-        //             showConfirmButton: false,
-        //             timer: 3000,
-        //             timerProgressBar: true,
-        //             didOpen: (toast) => {
-        //                 toast.onmouseenter = Swal.stopTimer;
-        //                 toast.onmouseleave = Swal.resumeTimer;
-        //             }
-        //         });
-        //         Toast.fire({
-        //             icon: "error",
-        //             title: `${error.code}`,
-        //         });
-        //     });
+                }
+            })
+            .catch((error) => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "error",
+                    title: `${error?.response?.data?.message}`,
+                });
+            })
+
     }
 
     return (
@@ -145,7 +108,7 @@ const RegisterStudent = ({ role, setRole }) => {
                         </div>
                         <div className="flex-1 fieldset">
                             <label className="label">Wallet Address</label>
-                            <input name='wallet' type="text" className="input w-full" value={loading ? "Loading..." : account} disabled required />
+                            <input name='walletAddress' type="text" className="input w-full" value={loading ? "Loading..." : account} disabled required />
                         </div>
                     </div>
 

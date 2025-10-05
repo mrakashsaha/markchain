@@ -1,11 +1,11 @@
-
-import { AuthContext } from './AuthContext';
-import { useEffect, useState } from 'react';
+import { AuthContext } from "./AuthContext";
+import { useEffect, useState } from "react";
+import { nodeBackend } from "../axios/axiosInstance";
 
 const AuthProvider = ({ children }) => {
-
     const [account, setAccount] = useState(null);
-    const [loading, setLoading] = useState(true); // 🔹 loading state
+    const [loading, setLoading] = useState(true);
+    const [userInfo, setUserInfo] = useState(null);
 
     const connectWallet = async () => {
         if (window.ethereum) {
@@ -27,6 +27,7 @@ const AuthProvider = ({ children }) => {
 
     const disconnectWallet = () => {
         setAccount(null);
+        setUserInfo(null);
     };
 
     useEffect(() => {
@@ -46,7 +47,7 @@ const AuthProvider = ({ children }) => {
                     setAccount(null);
                 }
             }
-            setLoading(false); // 🔹 stop loading after check
+            setLoading(false);
         };
 
         checkConnection();
@@ -62,9 +63,35 @@ const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const fetchUserInfo = async () => {
+        if (!account) {
+            setUserInfo(null);
+            return;
+        }
+
+        try {
+            const res = await nodeBackend.get(`/userinfo?wallet=${account}`);
+            setUserInfo(res.data);
+        } catch (error) {
+            console.error("Failed to fetch user info:", error);
+            setUserInfo(null);
+        }
+    };
+
+    // fetch when wallet changes
+    useEffect(() => {
+        fetchUserInfo();
+    }, [account]);
+
+
     const authInfo = {
-        account, loading, connectWallet, disconnectWallet
-    }
+        account,
+        loading,
+        userInfo,
+        connectWallet,
+        disconnectWallet,
+        refreshUserInfo: fetchUserInfo,
+    };
 
     return (
         <AuthContext.Provider value={authInfo}>

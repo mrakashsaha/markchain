@@ -3,6 +3,7 @@ import { AuthContext } from '../../contextAPI/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { nodeBackend } from '../../axios/axiosInstance';
 import metamaskLogo from "../../assets/metamask_logo.svg"
+import LoadingSpiner from '../../components/LoadingSpiner';
 
 
 const ContinueWithMetaMask = () => {
@@ -10,17 +11,18 @@ const ContinueWithMetaMask = () => {
     const { account, loading, connectWallet } = useContext(AuthContext);
 
     if (loading) {
-        return (
-            <div className='hero bg-base-200 min-h-screen'>
-                <span className="loading loading-bars loading-xl"></span>
-            </div>
-        );
+        return <LoadingSpiner></LoadingSpiner>
+
     }
 
     else if (account) {
         nodeBackend.get(`userinfo?wallet=${account}`)
             .then((res) => {
-                if (!res.data) {
+
+                if (res.data) {
+                    navigate("/pending")
+                }
+                else {
                     navigate("/register")
                 }
             }
