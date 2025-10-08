@@ -3,9 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthProvider from './contextAPI/AuthProvider.jsx';
-import AdminLayout from './layout/AdminLayout.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
-import StudentLayout from './layout/StudentLayout.jsx';
 import StudentHome from './pages/student/StudentHome.jsx';
 
 import ContinueWithMetaMask from './pages/user/ContinueWithMetaMask.jsx';
@@ -13,6 +11,8 @@ import Register from './pages/user/Register.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import MainLayout from './layout/MainLayout.jsx';
 import PendingAccount from './components/PendingAccount.jsx';
+import DashboardLayout from './layout/DashboardLayout.jsx';
+import DashboardHome from './pages/Dashboard/DashboardHome.jsx';
 
 const router = createBrowserRouter([
   {
@@ -36,16 +36,75 @@ const router = createBrowserRouter([
     ]
   },
 
-
-
-  // Admin routes
   {
-    path: "/admin",
-    element: <AdminLayout></AdminLayout>,
+    path: "/dashboard",
+    element: <DashboardLayout />,
     children: [
+
       {
-        path: "/admin",
-        element: <AdminHome></AdminHome>,
+        index: true,
+        element: <DashboardHome></DashboardHome>
+      },
+
+      {
+        path: "admin/home",
+        element: <h2>Admin Dashboard Home</h2>,
+      },
+      {
+        path: "admin/manage-users",
+        element: <h2>Manage Users</h2>,
+      },
+      {
+        path: "admin/manage-semesters",
+        element: <h2>Manage Semesters</h2>,
+      },
+      {
+        path: "admin/create-course",
+        element: <h2>Create New Course</h2>,
+      },
+      {
+        path: "admin/assign-course",
+        element: <h2>Assign Course to Faculty for Specific Semester</h2>,
+      },
+      {
+        path: "admin/reports",
+        element: <h2>View Academic Reports</h2>,
+      },
+
+      // ========================= STUDENT ROUTES =========================
+      {
+        path: "student/home",
+        element: <h2>Student Dashboard Home</h2>,
+      },
+      {
+        path: "student/offer-course",
+        element: <h2>Offer Courses</h2>,
+      },
+      {
+        path: "student/enrolled-courses",
+        element: <h2>My Enrolled Courses</h2>,
+      },
+      {
+        path: "student/results",
+        element: <h2>My Results</h2>,
+      },
+
+      // ========================= TEACHER ROUTES =========================
+      {
+        path: "teacher/home",
+        element: <h2>Teacher Dashboard Home</h2>,
+      },
+      {
+        path: "teacher/my-courses",
+        element: <h2>Courses I Teach</h2>,
+      },
+      {
+        path: "teacher/student-list",
+        element: <h2>View Enrolled Students</h2>,
+      },
+      {
+        path: "teacher/grade-submission",
+        element: <h2>Submit Grades</h2>,
       },
     ]
   },
@@ -53,16 +112,30 @@ const router = createBrowserRouter([
 
 
   // Admin routes
-  {
-    path: "/student",
-    element: <StudentLayout></StudentLayout>,
-    children: [
-      {
-        path: "/student",
-        element: <StudentHome></StudentHome>,
-      },
-    ]
-  },
+  // {
+  //   path: "/admin2",
+  //   element: <AdminLayout></AdminLayout>,
+  //   children: [
+  //     {
+  //       path: "/admin2",
+  //       element: <AdminHome></AdminHome>,
+  //     },
+  //   ]
+  // },
+
+
+
+  // Admin routes
+  // {
+  //   path: "/student2",
+  //   element: <StudentLayout></StudentLayout>,
+  //   children: [
+  //     {
+  //       path: "/student2",
+  //       element: <StudentHome></StudentHome>,
+  //     },
+  //   ]
+  // },
 
 
 ]);
