@@ -52,7 +52,7 @@ const SideBar = () => {
                     <ul className="menu bg-base-100 text-base-content min-h-full w-60 p-4 space-y-2">
                         {userInfo?.role === "admin" && adminSidebar}
                         {userInfo?.role === "teacher" && teacherSidebar}
-                        {userInfo?.role === "teacher" && studentSidebar}
+                        {userInfo?.role === "student" && studentSidebar}
                     </ul>
                 </div>
             </div>

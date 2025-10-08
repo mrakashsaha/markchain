@@ -3,9 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthProvider from './contextAPI/AuthProvider.jsx';
-import AdminHome from './pages/admin/AdminHome.jsx';
-import StudentHome from './pages/student/StudentHome.jsx';
-
 import ContinueWithMetaMask from './pages/user/ContinueWithMetaMask.jsx';
 import Register from './pages/user/Register.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
