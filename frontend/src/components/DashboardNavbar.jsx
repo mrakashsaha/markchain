@@ -1,34 +1,50 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { BiSolidCoinStack } from 'react-icons/bi';
+import { PiPowerBold } from "react-icons/pi";
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../contextAPI/AuthContext';
+import metamaskLogo from "../assets/metamask_logo.svg"
 
-const DashboardNavbar = () => {
+
+const DashBoardNavBar = () => {
+    const { account, loading } = useContext(AuthContext);
     return (
-        <div>
-            <div className="navbar bg-base-100 shadow-sm">
+        <div className='bg-base-100 shadow-md'>
+            <div className="navbar p-4">
                 <div className="flex-1">
-                    <a className="btn btn-ghost text-xl">markChain</a>
+                    <Link to={"/dashboard"} className="btn btn-ghost text-xl">MarkChain</Link>
                 </div>
-                <div className="flex gap-2">
-                    <input type="text" placeholder="Search" className="input input-bordered w-24 md:w-auto" />
-                    <div className="dropdown dropdown-end">
-                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                            <div className="w-10 rounded-full">
-                                <img
-                                    alt="Tailwind CSS Navbar component"
-                                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                <div className="flex items-center md:gap-4">
+                    <div className=''>
+                        {loading ?
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex flex-col gap-2">
+                                        <div className="skeleton h-2 w-58"></div>
+                                        <div className="skeleton h-2 w-58"></div>
+                                    </div>
+                                    <div className="skeleton h-10 w-10 shrink-0 rounded-full"></div>
+                                </div>
                             </div>
-                        </div>
-                        <ul
-                            tabIndex={0}
-                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                            <li>
-                                <a className="justify-between">
-                                    Profile
-                                    <span className="badge">New</span>
-                                </a>
-                            </li>
-                            <li><a>Settings</a></li>
-                            <li><a>Logout</a></li>
-                        </ul>
+                            :
+                            <div>
+                                {account ?
+                                    <div className='flex items-center gap-x-4'>
+                                        <span>Connected: {account}</span>
+                                        <div className="w-8">
+                                            <img alt="MetaMask_Logo" src={metamaskLogo} />
+                                        </div>
+                                    </div>
+                                    :
+                                    <div className='flex items-center gap-x-4'>
+                                        <span>No account connected</span>
+                                        <div className="w-8">
+                                            <img alt="MetaMask_Logo" src={metamaskLogo} />
+                                        </div>
+                                    </div>
+
+                                }
+                            </div>}
                     </div>
                 </div>
             </div>
@@ -36,4 +52,4 @@ const DashboardNavbar = () => {
     );
 };
 
-export default DashboardNavbar;
+export default DashBoardNavBar;
