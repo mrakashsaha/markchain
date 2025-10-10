@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 const RegisterStudent = ({ role, setRole }) => {
-    const {refreshUserInfo, account, loading } = useContext(AuthContext);
+    const { refreshUserInfo, account, loading } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleSubmit = (e) => {
@@ -19,7 +19,7 @@ const RegisterStudent = ({ role, setRole }) => {
         const userInfo = {
             walletAddress: account,
             createdAt: moment().toISOString(),
-            isApproved: false,
+            status: "pending",
             role: "student",
             publicKey: null,
             ...Object.fromEntries(formData.entries()),

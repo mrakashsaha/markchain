@@ -313,6 +313,7 @@ async function run() {
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
+        // Geting loged in userinformatin
         app.get("/userInfo", async (req, res) => {
 
             const query = { walletAddress: req.query.wallet }
@@ -320,7 +321,7 @@ async function run() {
             res.send(result);
         })
 
-
+        // register a new user to a system
         app.post("/register", async (req, res) => {
             try {
                 const { userInfo } = req.body;
@@ -342,6 +343,91 @@ async function run() {
                 console.log(error)
             }
         })
+
+
+        // Admins APIs
+
+        app.get("/system-users", async (req, res) => {
+            try {
+                const { role, status, search } = req.query;
+                const filter = {};
+
+                // Role filter
+                if (role) filter.role = role;
+
+                // Status filter (pending, approved, rejected)
+                if (status && status !== "all") filter.status = status;
+
+                // Search filter (case-insensitive, matches walletAddress or name/email/phone)
+                if (search) {
+                    const searchRegex = new RegExp(search, "i");
+                    filter.$or = [
+                        { walletAddress: searchRegex },
+                        { studentName: searchRegex },
+                        { studentEmail: searchRegex },
+                        { studentPhone: searchRegex },
+                        { teacherName: searchRegex },
+                        { teacherEmail: searchRegex },
+                        { teacherPhone: searchRegex },
+                    ];
+                }
+
+                const result = await usersCollection.find(filter).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                res.status(500).json({ error: "Server error" });
+            }
+        });
+
+
+
+        // manage users status approve / reject and 
+        app.patch("/system-users", async (req, res) => {
+            try {
+                const { walletAddress, action } = req.query;
+
+                if (!walletAddress || !action) {
+                    return res
+                        .status(400)
+                        .json({ error: "walletAddress and action are required" });
+                }
+
+                // Define valid status updates
+                let update = {};
+
+                switch (action) {
+                    case "approve":
+                        update.status = "approved";
+                        break;
+                    case "reject":
+                        update.status = "rejected";
+                        break;
+                    case "pending":
+                        update.status = "pending";
+                        break;
+                    default:
+                        return res.status(400).json({ error: "Invalid action" });
+                }
+
+                const result = await usersCollection.updateOne(
+                    { walletAddress },
+                    { $set: update }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error("Error updating status:", error);
+                res.status(500).json({ error: "Server error" });
+            }
+        });
+
+
+
 
 
     } finally {
