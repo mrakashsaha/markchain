@@ -10,6 +10,8 @@ import MainLayout from './layout/MainLayout.jsx';
 import PendingAccount from './components/PendingAccount.jsx';
 import DashboardLayout from './layout/DashboardLayout.jsx';
 import DashboardHome from './pages/Dashboard/DashboardHome.jsx';
+import ManageUsers from './pages/Dashboard/admin/ManageUser.jsx';
+import RejectedAccount from './components/RejectedAccount.jsx';
 
 const router = createBrowserRouter([
   {
@@ -30,6 +32,10 @@ const router = createBrowserRouter([
         path: "/pending",
         element: <PrivateRoute><PendingAccount></PendingAccount></PrivateRoute>,
       },
+      {
+        path: "/reject",
+        element: <PrivateRoute><RejectedAccount></RejectedAccount></PrivateRoute>,
+      },
     ]
   },
 
@@ -49,7 +55,7 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/manage-users",
-        element: <h2>Manage Users</h2>,
+        element: <ManageUsers></ManageUsers>,
       },
       {
         path: "admin/manage-semesters",

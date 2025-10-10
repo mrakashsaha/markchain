@@ -18,7 +18,7 @@ const RegisterTeacher = ({ role, setRole }) => {
         const userInfo = {
             walletAddress: account,
             createdAt: moment().toISOString(),
-            isApproved: false,
+            status: "pending",
             role: "teacher",
             publicKey: null,
             ...Object.fromEntries(formData.entries()),
