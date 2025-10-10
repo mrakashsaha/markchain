@@ -21,10 +21,13 @@ const PrivateRoute = ({ children }) => {
   if (location.pathname === "/register") {
     // User already exists
     if (userInfo) {
-      if (userInfo.isApproved === false) {
+      if (userInfo.status === "pending") {
         return <Navigate to="/pending" replace />;
-      } else {
+      } else if (userInfo.status === "approved") {
         return <Navigate to="/dashboard" replace />;
+      }
+      else {
+        return <Navigate to="/reject" replace />;
       }
     }
   }
@@ -36,8 +39,12 @@ const PrivateRoute = ({ children }) => {
       return <Navigate to="/register" replace />;
     }
 
-    if (userInfo.isApproved === true) {
+    if (userInfo.status === "approved") {
       return <Navigate to="/dashboard" replace />;
+    }
+
+    if (userInfo.status === "rejected") {
+      return <Navigate to="/reject" replace />;
     }
   }
 
