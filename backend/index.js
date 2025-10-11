@@ -397,10 +397,10 @@ async function run() {
                 let update = {};
 
                 switch (action) {
-                    case "approve":
+                    case "approved":
                         update.status = "approved";
                         break;
-                    case "reject":
+                    case "rejected":
                         update.status = "rejected";
                         break;
                     case "pending":
