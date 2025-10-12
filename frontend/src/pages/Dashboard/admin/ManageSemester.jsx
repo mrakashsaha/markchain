@@ -1,46 +1,76 @@
-import React, { useState } from "react";
-import { FaSearch, FaPlus } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaSearch, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { nodeBackend } from "../../../axios/axiosInstance";
+
+import LoadingSpiner from "../../../components/LoadingSpiner";
+import moment from "moment";
+import CustomToast from "../../../Toast/CustomToast";
+
 
 const ManageSemester = () => {
-  const [search, setSearch] = useState("");
+  const [semesters, setSemesters] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    semesterName: "",
-    year: "",
-    startDate: "",
-    endDate: "",
-    status: "upcoming",
-  });
+
+  // ✅ Fetch semesters
+  const fetchSemesters = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (search) params.append("search", search);
+
+      const res = await nodeBackend.get(`/semesters?${params.toString()}`);
+      setSemesters(res.data);
+    } catch (error) {
+      console.error("Failed to fetch semesters:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSemesters();
+  }, [statusFilter]);
 
   // ✅ Handle Search
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log("Searching for:", search, "with status:", statusFilter);
+    fetchSemesters();
   };
 
-  // ✅ Handle Save
-  const handleSave = () => {
-    const { semesterName, year, startDate, endDate, status } = formData;
-    if (!semesterName || !year || !startDate || !endDate || !status) {
-      alert("Please fill all fields!");
-      return;
-    }
+  // ✅ Handle form submit
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    const semesterData = Object.fromEntries(data.entries());
 
-    const semesterCode = `${semesterName.toLowerCase()}${year}`;
-    const fullData = { ...formData, semesterCode };
+    // Convert startDate and endDate to ISO format
+    semesterData.startDate = moment(semesterData.startDate).toISOString();
+    semesterData.endDate = moment(semesterData.endDate).toISOString();
+    // convert year into number 
+    semesterData.year = Number(semesterData.year);
+    // Generate semester code from name + year
+    semesterData.semesterCode = `${semesterData.semesterName.toLowerCase()}${semesterData.year}`;
+    console.log(semesterData);
+    nodeBackend.post("/semesters", { semesterData })
+      .then(res => {
+        if (res.data.insertedId) {
+          CustomToast({ icon: "success", title: `${semesterData.semesterName + " " + semesterData.year} has beed created successfully` })
 
-    console.log("🧾 Semester Data Submitted:", fullData);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        CustomToast({ icon: "error", title: `${error.response.data.error || "Somthing Went Wrong"}` })
+      });
 
-    setFormData({
-      semesterName: "",
-      year: "",
-      startDate: "",
-      endDate: "",
-      status: "upcoming",
-    });
-    document.getElementById("add_semester_modal").close();
+    setShowModal(false);
   };
+
+  if (loading) return <LoadingSpiner />;
 
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-6 py-10">
@@ -86,7 +116,7 @@ const ManageSemester = () => {
           </form>
         </div>
 
-        {/* Placeholder Table */}
+        {/* Table */}
         <div className="overflow-x-auto bg-base-100 border border-base-300 rounded-2xl shadow-md">
           <table className="table table-zebra text-gray-200">
             <thead>
@@ -96,123 +126,116 @@ const ManageSemester = () => {
                 <th>Code</th>
                 <th>Duration</th>
                 <th>Status</th>
+                <th>Description</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colSpan="5" className="text-center py-4">
-                  No semesters found.
-                </td>
-              </tr>
+              {semesters.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="text-center py-4">
+                    No semesters found.
+                  </td>
+                </tr>
+              ) : (
+                semesters.map((s, i) => (
+                  <tr key={s._id}>
+                    <td>{i + 1}</td>
+                    <td>{s.semesterName}</td>
+                    <td>{s.semesterCode}</td>
+                    <td>{`${s.startDate} - ${s.endDate}`}</td>
+                    <td>
+                      <span
+                        className={`badge ${s.status === "running"
+                          ? "badge-success"
+                          : s.status === "upcoming"
+                            ? "badge-warning"
+                            : "badge-neutral"
+                          }`}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="truncate max-w-xs">{s.description}</td>
+                    <td className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="btn btn-sm btn-info flex items-center gap-1"
+                      >
+                        <FaEdit /> Edit
+                      </button>
+                      <button className="btn btn-sm btn-error flex items-center gap-1">
+                        <FaTrash /> Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* Add Semester Modal */}
-      {showModal && (
-        <dialog
-          id="add_semester_modal"
-          open
-          className="modal modal-bottom sm:modal-middle"
-        >
-          <div className="modal-box bg-base-100 text-base-content">
-            <h3 className="font-bold text-lg mb-4 text-primary">Add New Semester</h3>
+        {/* DaisyUI Modal */}
+        {showModal && (
+          <input type="checkbox" id="semester-modal" className="modal-toggle" checked readOnly />
+        )}
+        <div className={`modal ${showModal ? "modal-open" : ""}`}>
+          <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
+            <h3 className="font-bold text-lg text-primary mb-4">
+              Add New Semester
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <label className="label">
+                <span className="label-text">Semester Name</span>
+              </label>
+              <select name="semesterName" className="select select-bordered w-full bg-base-300 text-gray-200" required>
+                <option value="">Select Semester</option>
+                <option value="Summer">Summer</option>
+                <option value="Spring">Spring</option>
+                <option value="Fall">Fall</option>
+              </select>
 
-            <div className="space-y-3">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-gray-300">Semester Name</span>
-                </label>
-                <select
-                  name="semesterName"
-                  value={formData.semesterName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, semesterName: e.target.value })
-                  }
-                  className="select select-bordered bg-base-300 text-gray-200 w-full"
-                >
-                  <option value="">Select Semester</option>
-                  <option value="Summer">Summer</option>
-                  <option value="Spring">Spring</option>
-                  <option value="Fall">Fall</option>
-                </select>
+              <label className="label">
+                <span className="label-text">Year</span>
+              </label>
+              <input type="number" name="year" placeholder="e.g. 2024" className="input input-bordered w-full bg-base-300 text-gray-200" required />
+
+              <label className="label">
+                <span className="label-text">Start Date</span>
+              </label>
+              <input type="date" name="startDate" className="input input-bordered w-full bg-base-300 text-gray-200" required />
+
+              <label className="label">
+                <span className="label-text">End Date</span>
+              </label>
+              <input type="date" name="endDate" className="input input-bordered w-full bg-base-300 text-gray-200" required />
+
+              <label className="label">
+                <span className="label-text">Status</span>
+              </label>
+              <select name="status" className="select select-bordered w-full bg-base-300 text-gray-200" required>
+                <option value="upcoming">Upcoming</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <label className="label">
+                <span className="label-text">Description (optional)</span>
+              </label>
+              <textarea name="description" className="textarea textarea-bordered w-full bg-base-300 text-gray-200" rows="3"></textarea>
+
+              <div className="modal-action">
+                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Save
+                </button>
               </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-gray-300">Year</span>
-                </label>
-                <input
-                  type="number"
-                  name="year"
-                  placeholder="e.g. 2025"
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                  className="input input-bordered bg-base-300 text-gray-200 w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-gray-300">Start Date</span>
-                </label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
-                  className="input input-bordered bg-base-300 text-gray-200 w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-gray-300">End Date</span>
-                </label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
-                  className="input input-bordered bg-base-300 text-gray-200 w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-gray-300">Status</span>
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                  className="select select-bordered bg-base-300 text-gray-200 w-full"
-                >
-                  <option value="upcoming">Upcoming</option>
-                  <option value="running">Running</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button className="btn btn-outline" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Save
-              </button>
-            </div>
+            </form>
           </div>
-        </dialog>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

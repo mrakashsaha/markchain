@@ -52,7 +52,7 @@ const ManageUsers = () => {
     nodeBackend.patch(`/system-users?walletAddress=${walletAddress}&action=${action}`)
       .then(res => {
         if (res.data.modifiedCount) {
-          CustomToast({ icon: "sucess", title: `The user has been ${action} sucessfully` })
+          CustomToast({ icon: "success", title: `The user has been ${action} successfully` })
           setSelectedUser(null);
           fetchUsers();
         }
