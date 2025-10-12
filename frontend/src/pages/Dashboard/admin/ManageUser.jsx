@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { FaSearch, FaCheckCircle, FaTimesCircle, FaUser, FaEnvelope, FaPhone } from "react-icons/fa";
 import { MdAdminPanelSettings } from "react-icons/md";
+import { nodeBackend } from "../../../axios/axiosInstance";
+import CustomToast from "../../../Toast/CustomToast";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -11,29 +13,29 @@ const ManageUsers = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch users when filters or search query change
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-
-        if (role !== "all") params.append("role", role);
-        if (status !== "all") params.append("status", status);
-        if (query) params.append("search", query);
-
-        const res = await fetch(`http://localhost:5000/system-users?${params.toString()}`);
-        const data = await res.json();
-        setUsers(data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
-  }, [role, status, query]);
+  }, [query, role, status]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+
+      if (role !== "all") params.append("role", role);
+      if (status !== "all") params.append("status", status);
+      if (query) params.append("search", query);
+
+      const res = await fetch(`http://localhost:5000/system-users?${params.toString()}`);
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ✅ Trigger search manually
   const handleSearch = () => {
@@ -46,24 +48,20 @@ const ManageUsers = () => {
 
   // ✅ Handle status change
   const handleStatusChange = async (walletAddress, action) => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/system-users?walletAddress=${walletAddress}&action=${action}`,
-        { method: "PATCH" }
-      );
-      const data = await res.json();
+    console.log(walletAddress, action);
+    nodeBackend.patch(`/system-users?walletAddress=${walletAddress}&action=${action}`)
+      .then(res => {
+        if (res.data.modifiedCount) {
+          CustomToast({ icon: "sucess", title: `The user has been ${action} sucessfully` })
+          setSelectedUser(null);
+          fetchUsers();
+        }
 
-      if (data.modifiedCount >= 1) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.walletAddress === walletAddress ? { ...u, status: action } : u
-          )
-        );
-        setSelectedUser(null);
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
+        else {
+          CustomToast({ icon: "error", title: "Somthing went wrong" })
+        }
+      })
+      .catch(error => console.log(error))
   };
 
   // ✅ Badge color by status
@@ -161,7 +159,7 @@ const ManageUsers = () => {
                     <td className="flex gap-2">
                       <button
                         onClick={() => setSelectedUser(user)}
-                        className="btn btn-xs btn-outline"
+                        className="btn btn-sm btn-outline"
                       >
                         View
                       </button>
@@ -175,29 +173,29 @@ const ManageUsers = () => {
 
         {/* Modal */}
         {selectedUser && (
-          <dialog open className="modal modal-open">
-            <div className="modal-box bg-base-200 text-gray-200 max-w-3xl">
+          <dialog open className="modal modal-open ">
+            <div className="modal-box  bg-base-200 text-gray-200 max-w-3xl">
               <h3 className="text-lg font-bold border-b border-base-300 pb-2 mb-4">
                 User Details
               </h3>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <p><FaUser className="inline mr-2 text-primary" /> <b>Name:</b> {selectedUser.studentName || selectedUser.teacherName}</p>
-                <p><FaEnvelope className="inline mr-2 text-primary" /> <b>Email:</b> {selectedUser.studentEmail || selectedUser.teacherEmail}</p>
-                <p><FaPhone className="inline mr-2 text-primary" /> <b>Phone:</b> {selectedUser.studentPhone || selectedUser.teacherPhone}</p>
-                <p><b>Role:</b> {selectedUser.role}</p>
-                <p><b>Status:</b> <span className={getStatusBadge(selectedUser.status)}>{selectedUser.status}</span></p>
+                <p><b>Name:</b> {selectedUser.studentName || selectedUser.teacherName}</p>
+                <p><b>Email:</b> {selectedUser.studentEmail || selectedUser.teacherEmail}</p>
+                <p><b>Phone:</b> {selectedUser.studentPhone || selectedUser.teacherPhone}</p>
+                <p><b>Role:</b> <span className="capitalize">{selectedUser.role}</span></p>
+                <p><b>Status:</b> <span className="capitalize">{selectedUser.status}</span></p>
                 <p><b>Wallet Address:</b> {selectedUser.walletAddress}</p>
-                <p><b>Gender:</b> {selectedUser.gender || "N/A"}</p>
+                <p><b>Gender:</b> <span className="capitalize">{selectedUser.gender || "N/A"}</span></p>
                 <p><b>Blood Group:</b> {selectedUser.bloodGroup || "N/A"}</p>
                 <p><b>Created At:</b> {new Date(selectedUser.createdAt).toLocaleString()}</p>
 
                 {selectedUser.role === "teacher" && (
                   <>
-                    <p><b>Department:</b> {selectedUser.department || "N/A"}</p>
-                    <p><b>Qualification:</b> {selectedUser.qualification || "N/A"}</p>
-                    <p><b>Experience:</b> {selectedUser.experience || "N/A"} years</p>
-                    <p><b>Specialization:</b> {selectedUser.specialization?.join(", ") || "N/A"}</p>
+                    <p><b>Department:</b> <span className="capitalize">{selectedUser.department || "N/A"}</span></p>
+                    <p><b>Qualification:</b> <span className="capitalize">{selectedUser.qualification || "N/A"}</span></p>
+                    <p><b>Experience:</b> <span className="capitalize">{selectedUser.experience || "N/A"} years</span></p>
+                    <p><b>Specialization:</b> <span className="capitalize">{selectedUser.specialization?.join(", ") || "N/A"}</span></p>
                   </>
                 )}
 

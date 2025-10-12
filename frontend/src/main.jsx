@@ -12,6 +12,7 @@ import DashboardLayout from './layout/DashboardLayout.jsx';
 import DashboardHome from './pages/Dashboard/DashboardHome.jsx';
 import ManageUsers from './pages/Dashboard/admin/ManageUser.jsx';
 import RejectedAccount from './components/RejectedAccount.jsx';
+import ManageSemester from './pages/Dashboard/admin/ManageSemester.jsx';
 
 const router = createBrowserRouter([
   {
@@ -59,7 +60,7 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/manage-semesters",
-        element: <h2>Manage Semesters</h2>,
+        element: <ManageSemester></ManageSemester>,
       },
       {
         path: "admin/create-course",
