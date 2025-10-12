@@ -173,8 +173,8 @@ const ManageUsers = () => {
 
         {/* Modal */}
         {selectedUser && (
-          <dialog open className="modal modal-open">
-            <div className="modal-box bg-base-200 text-gray-200 max-w-3xl">
+          <dialog open className="modal modal-open ">
+            <div className="modal-box  bg-base-200 text-gray-200 max-w-3xl">
               <h3 className="text-lg font-bold border-b border-base-300 pb-2 mb-4">
                 User Details
               </h3>
