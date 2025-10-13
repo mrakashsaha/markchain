@@ -13,6 +13,8 @@ import DashboardHome from './pages/Dashboard/DashboardHome.jsx';
 import ManageUsers from './pages/Dashboard/admin/ManageUser.jsx';
 import RejectedAccount from './components/RejectedAccount.jsx';
 import ManageSemester from './pages/Dashboard/admin/ManageSemester.jsx';
+import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
+import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
 
 const router = createBrowserRouter([
   {
@@ -64,11 +66,11 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/create-course",
-        element: <h2>Create New Course</h2>,
+        element: <CreateCourses></CreateCourses>,
       },
       {
         path: "admin/assign-course",
-        element: <h2>Assign Course to Faculty for Specific Semester</h2>,
+        element: <ManageAssignedCourses></ManageAssignedCourses>,
       },
       {
         path: "admin/reports",
