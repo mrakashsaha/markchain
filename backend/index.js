@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 const crypto = require('crypto');
 require('@dotenvx/dotenvx').config()
 const app = express()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 
@@ -473,6 +473,59 @@ async function run() {
                 res.status(500).send({ error: "Server error" });
             }
         });
+
+        // update semister status
+        app.patch("/semesters", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const { status } = req.body;
+
+                if (!id || !status) {
+                    return res.status(400).send({ error: "id and status are required" });
+                }
+
+                const result = await semestersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { status } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ error: "Semester not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+        // delete a semister 
+        app.delete("/semesters", async (req, res) => {
+            try {
+                const id = req.query.id;
+
+                if (!id) {
+                    return res.status(400).send({ error: "id is required" });
+                }
+
+                const result = await semestersCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ error: "Semester not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
 
 
 
