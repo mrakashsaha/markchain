@@ -305,6 +305,9 @@ const client = new MongoClient(uri, {
 
 const usersCollection = client.db("markChainDB").collection("users");
 const semestersCollection = client.db("markChainDB").collection("semesters");
+const coursesCollection = client.db("markChainDB").collection("courses");
+const assignedCoursesCollection = client.db("markChainDB").collection("assignedCourses");
+
 
 async function run() {
     try {
@@ -527,7 +530,165 @@ async function run() {
 
 
 
+        // Manage Course\
+        app.get("/courses", async (req, res) => {
+            try {
+                const { search } = req.query;
+                const filter = {};
 
+                if (search) {
+                    const regex = new RegExp(search, "i");
+                    filter.$or = [
+                        { courseCode: regex },
+                        { courseTitle: regex },
+                        { department: regex },
+                    ];
+                }
+
+                const result = await coursesCollection.find(filter).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // ✅ POST
+        app.post("/courses", async (req, res) => {
+            try {
+                const { courseData } = req.body;
+
+                courseData.credit = Number(courseData.credit);
+                courseData.createdAt = new Date();
+
+                const existing = await coursesCollection.findOne({ courseCode: courseData.courseCode });
+                if (existing) {
+                    return res.status(400).send({ error: "Course code already exists" });
+                }
+
+                const result = await coursesCollection.insertOne(courseData);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // PATCH
+        app.patch("/courses", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const updateData = req.body;
+                if (updateData.credit) updateData.credit = Number(updateData.credit);
+
+                const result = await coursesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateData }
+                );
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // ✅ DELETE
+        app.delete("/courses", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const result = await coursesCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+
+        // Assigned course==========================
+        app.post("/assignedCourses", async (req, res) => {
+            try {
+                const { courseData } = req.body;
+
+                // Prevent duplicate assignment of the same course to same teacher in same semester
+                const exists = await assignedCoursesCollection.findOne({
+                    courseCode: courseData.courseCode,
+                    teacherWallet: courseData.teacherWallet,
+                    semesterCode: courseData.semesterCode,
+                });
+
+                if (exists) {
+                    return res.status(400).send({ error: "This course is already assigned to this teacher for this semester" });
+                }
+
+                const result = await assignedCoursesCollection.insertOne({
+                    ...courseData,
+                    assignedAt: new Date(),
+                });
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+        // ✅ GET — Fetch assigned courses (supports filter & search)
+        app.get("/assignedCourses", async (req, res) => {
+            try {
+                const { department, search, semesterCode } = req.query;
+                const query = {};
+
+                if (department && department !== "all") query.department = department;
+                if (semesterCode && semesterCode !== "all") query.semesterCode = semesterCode;
+
+                if (search) {
+                    query.$or = [
+                        { courseCode: { $regex: search, $options: "i" } },
+                        { courseTitle: { $regex: search, $options: "i" } },
+                        { teacherName: { $regex: search, $options: "i" } },
+                        { teacherWallet: { $regex: search, $options: "i" } },
+                    ];
+                }
+
+                const result = await assignedCoursesCollection.find(query).sort({ assignedAt: -1 }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+        // ✅ PATCH — Update assigned course (if needed)
+        app.patch("/assignedCourses/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const updatedData = req.body;
+
+                const result = await assignedCoursesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedData }
+                );
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+        // ✅ DELETE — Remove an assigned course
+        app.delete("/assignedCourses/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const result = await assignedCoursesCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
 
 
 
