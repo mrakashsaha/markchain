@@ -72,10 +72,6 @@ const router = createBrowserRouter([
         path: "admin/assign-course",
         element: <ManageAssignedCourses></ManageAssignedCourses>,
       },
-      {
-        path: "admin/reports",
-        element: <h2>View Academic Reports</h2>,
-      },
 
       // ========================= STUDENT ROUTES =========================
       {
