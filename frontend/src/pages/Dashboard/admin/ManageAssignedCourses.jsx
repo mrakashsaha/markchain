@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { FaSearch, FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash } from "react-icons/fa";
 import { nodeBackend } from "../../../axios/axiosInstance";
 import LoadingSpiner from "../../../components/LoadingSpiner";
 import CustomToast from "../../../Toast/CustomToast";
 import Swal from "sweetalert2";
-import moment from "moment";
 
 const ManageAssignedCourses = () => {
   const [assignedCourses, setAssignedCourses] = useState([]);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [semesterFilter, setSemesterFilter] = useState("all");
-  const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,14 +16,13 @@ const ManageAssignedCourses = () => {
   const [teachers, setTeachers] = useState([]);
   const [semesters, setSemesters] = useState([]);
 
-  // ✅ Fetch assigned courses
+  // Fetch assigned courses
   const fetchAssignedCourses = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (departmentFilter !== "all") params.append("department", departmentFilter);
       if (semesterFilter !== "all") params.append("semesterCode", semesterFilter);
-      if (search) params.append("search", search);
 
       const res = await nodeBackend.get(`/assignedCourses?${params.toString()}`);
       setAssignedCourses(res.data);
@@ -36,7 +33,7 @@ const ManageAssignedCourses = () => {
     }
   };
 
-  // ✅ Fetch dependencies
+  // Fetch dependencies
   useEffect(() => {
     fetchAssignedCourses();
     nodeBackend.get("/courses").then(res => setCourses(res.data));
@@ -48,26 +45,18 @@ const ManageAssignedCourses = () => {
     fetchAssignedCourses();
   }, [departmentFilter, semesterFilter]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchAssignedCourses();
-  };
-
-  // ✅ Handle form submit
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
     const courseData = Object.fromEntries(data.entries());
-    courseData.credit = Number(courseData.credit);
+
+    console.log(courseData)
 
     nodeBackend
-      .post("/assignedCourses", { courseData })
+      .post("/assignedCourses", {courseData})
       .then((res) => {
         if (res.data.insertedId) {
-          CustomToast({
-            icon: "success",
-            title: "Course assigned successfully",
-          });
+          CustomToast({ icon: "success", title: "Course assigned successfully" });
           fetchAssignedCourses();
           setShowModal(false);
         }
@@ -80,7 +69,6 @@ const ManageAssignedCourses = () => {
       });
   };
 
-  // ✅ Handle delete
   const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -100,10 +88,7 @@ const ManageAssignedCourses = () => {
             }
           })
           .catch(() => {
-            CustomToast({
-              icon: "error",
-              title: "Failed to delete",
-            });
+            CustomToast({ icon: "error", title: "Failed to delete" });
           });
       }
     });
@@ -114,6 +99,7 @@ const ManageAssignedCourses = () => {
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-6 py-10">
       <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold text-primary">Manage Assigned Courses</h1>
           <button onClick={() => setShowModal(true)} className="btn btn-primary flex items-center gap-2">
@@ -140,25 +126,12 @@ const ManageAssignedCourses = () => {
             className="select select-bordered bg-base-300 text-gray-200 w-full md:w-48"
           >
             <option value="all">All Semesters</option>
-            {semesters.map((sem) => (
-              <option key={sem._id} value={sem.semesterCode}>
-                {sem.semesterName} {sem.year}
+            {semesters.map((s) => (
+              <option key={s._id} value={s.semesterCode}>
+                {s.semesterName} {s.year}
               </option>
             ))}
           </select>
-
-          <form onSubmit={handleSearch} className="flex items-center w-full md:w-auto gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search course or teacher..."
-              className="input input-bordered bg-base-300 text-gray-200 w-full md:w-64"
-            />
-            <button type="submit" className="btn btn-primary flex items-center gap-2">
-              <FaSearch /> Search
-            </button>
-          </form>
         </div>
 
         {/* Table */}
@@ -179,20 +152,18 @@ const ManageAssignedCourses = () => {
             <tbody>
               {assignedCourses.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-4">
-                    No assigned courses found.
-                  </td>
+                  <td colSpan="8" className="text-center py-4">No assigned courses found.</td>
                 </tr>
               ) : (
                 assignedCourses.map((a, i) => (
                   <tr key={a._id}>
                     <td>{i + 1}</td>
                     <td>{a.courseCode}</td>
-                    <td>{a.courseTitle}</td>
-                    <td>{a.credit}</td>
-                    <td>{a.teacherName}</td>
-                    <td className="text-xs">{a.teacherWallet}</td>
-                    <td>{a.semesterName}</td>
+                    <td>{a.courseInfo.courseTitle}</td>
+                    <td>{a.courseInfo.credit}</td>
+                    <td>{a.teacherInfo.teacherName}</td>
+                    <td className="text-xs">{a.teacherInfo.walletAddress}</td>
+                    <td>{a.semesterInfo.semesterName} {a.semesterInfo.year}</td>
                     <td>
                       <button
                         onClick={() => handleDelete(a._id)}
@@ -233,7 +204,7 @@ const ManageAssignedCourses = () => {
                 <option value="">Select Teacher</option>
                 {teachers.map((t) => (
                   <option key={t._id} value={t.walletAddress}>
-                    {t.teacherName + " [" + t.department + " Department] "} {"Email: " +t.teacherEmail}
+                    {t.teacherName} [{t.department}] - {t.teacherEmail}
                   </option>
                 ))}
               </select>
@@ -251,12 +222,8 @@ const ManageAssignedCourses = () => {
               </select>
 
               <div className="modal-action">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Assign
-                </button>
+                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Assign</button>
               </div>
             </form>
           </div>

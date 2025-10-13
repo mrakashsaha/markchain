@@ -624,7 +624,7 @@ async function run() {
 
                 const result = await assignedCoursesCollection.insertOne({
                     ...courseData,
-                    assignedAt: new Date(),
+                    assignedAt: new Date().toISOString(),
                 });
 
                 res.send(result);
@@ -637,28 +637,72 @@ async function run() {
         // ✅ GET — Fetch assigned courses (supports filter & search)
         app.get("/assignedCourses", async (req, res) => {
             try {
-                const { department, search, semesterCode } = req.query;
-                const query = {};
+                const { department, semesterCode, search } = req.query;
 
-                if (department && department !== "all") query.department = department;
-                if (semesterCode && semesterCode !== "all") query.semesterCode = semesterCode;
+                const match = {};
+                if (department && department !== "all") match["courseInfo.department"] = department;
+                if (semesterCode && semesterCode !== "all") match["semesterCode"] = semesterCode;
 
                 if (search) {
-                    query.$or = [
-                        { courseCode: { $regex: search, $options: "i" } },
-                        { courseTitle: { $regex: search, $options: "i" } },
-                        { teacherName: { $regex: search, $options: "i" } },
-                        { teacherWallet: { $regex: search, $options: "i" } },
+                    match["$or"] = [
+                        { "courseInfo.courseTitle": { $regex: search, $options: "i" } },
+                        { "teacherInfo.teacherName": { $regex: search, $options: "i" } }
                     ];
                 }
 
-                const result = await assignedCoursesCollection.find(query).sort({ assignedAt: -1 }).toArray();
-                res.send(result);
-            } catch (error) {
-                console.error(error);
-                res.status(500).send({ error: "Server Error" });
+                const assignedCourses = await assignedCoursesCollection.aggregate([
+                    {
+                        $lookup: {
+                            from: "courses",
+                            localField: "courseCode",
+                            foreignField: "courseCode",
+                            as: "courseInfo",
+                        },
+                    },
+                    { $unwind: "$courseInfo" },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "teacherWallet",
+                            foreignField: "walletAddress",
+                            as: "teacherInfo",
+                        },
+                    },
+                    { $unwind: "$teacherInfo" },
+                    {
+                        $lookup: {
+                            from: "semesters",
+                            localField: "semesterCode",
+                            foreignField: "semesterCode",
+                            as: "semesterInfo",
+                        },
+                    },
+                    { $unwind: "$semesterInfo" },
+                    { $match: match },
+                    {
+                        $project: {
+                            _id: 1,
+                            courseCode: 1,
+                            semesterCode: 1,
+                            "courseInfo.courseTitle": 1,
+                            "courseInfo.credit": 1,
+                            "courseInfo.department": 1,
+                            "teacherInfo.teacherName": 1,
+                            "teacherInfo.walletAddress": 1,
+                            "teacherInfo.teacherEmail": 1,
+                            "semesterInfo.semesterName": 1,
+                            "semesterInfo.year": 1,
+                        },
+                    },
+                ]).toArray();
+
+                res.send(assignedCourses);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: "Failed to fetch assigned courses" });
             }
         });
+
 
         // ✅ PATCH — Update assigned course (if needed)
         app.patch("/assignedCourses/:id", async (req, res) => {
