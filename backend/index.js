@@ -275,16 +275,16 @@ app.post("/sendEmail", async (req, res) => {
 
         // If we got here, sendEmail() didn't throw an error
         if (result.toString().slice(0, 3) == 250) {
-            res.send({ sucess: true, message: "Login Credentials sent to email successfully" });
+            res.send({ success: true, message: "Login Credentials sent to email successfully" });
         }
 
         else {
-            res.send({ sucess: false, message: "Failed to send Login Credentials in your email" });
+            res.send({ success: false, message: "Failed to send Login Credentials in your email" });
         }
 
     } catch (error) {
         console.log(error)
-        res.send({ sucess: false, message: "Failed to send Login Credentials in your email" });
+        res.send({ success: false, message: "Failed to send Login Credentials in your email" });
     }
 });
 
@@ -304,6 +304,7 @@ const client = new MongoClient(uri, {
 
 
 const usersCollection = client.db("markChainDB").collection("users");
+const semestersCollection = client.db("markChainDB").collection("semesters");
 
 async function run() {
     try {
@@ -329,7 +330,7 @@ async function run() {
                 const duplicateWallet = await usersCollection.findOne({ walletAddress: userInfo.walletAddress })
 
                 if (duplicateWallet) {
-                    res.status(400).json({ sucess: false, message: "This wallet address is already registered." });
+                    res.status(400).json({ success: false, message: "This wallet address is already registered." });
 
                 }
                 else {
@@ -339,7 +340,7 @@ async function run() {
 
             }
             catch (error) {
-                res.status(500).json({ sucess: false, message: "Internal Server Error" });
+                res.status(500).json({ success: false, message: "Internal Server Error" });
                 console.log(error)
             }
         })
@@ -379,8 +380,6 @@ async function run() {
                 res.status(500).json({ error: "Server error" });
             }
         });
-
-
 
         // manage users status approve / reject and 
         app.patch("/system-users", async (req, res) => {
@@ -423,6 +422,55 @@ async function run() {
             } catch (error) {
                 console.error("Error updating status:", error);
                 res.status(500).json({ error: "Server error" });
+            }
+        });
+
+
+
+        // Manage semisters
+
+        // Create new semester
+        app.post("/semesters", async (req, res) => {
+            try {
+
+                const { semesterData } = req.body;
+                // Check for uniqueness
+                const existing = await semestersCollection.findOne({ semesterCode: semesterData.semesterCode });
+                if (existing) {
+                    return res.status(400).send({ error: "Semester code already exists" });
+                }
+
+                const result = await semestersCollection.insertOne(semesterData);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+        // Get Semister
+        app.get("/semesters", async (req, res) => {
+            try {
+                const { status, search } = req.query;
+                const filter = {};
+
+                if (status && status !== "all") filter.status = status;
+
+                if (search) {
+                    const searchRegex = new RegExp(search, "i");
+                    filter.$or = [
+                        { semesterName: searchRegex },
+                        { semesterCode: searchRegex },
+                        { description: searchRegex },
+                    ];
+                }
+
+                const semesters = await semestersCollection.find(filter).toArray();
+                res.send(semesters);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
             }
         });
 
