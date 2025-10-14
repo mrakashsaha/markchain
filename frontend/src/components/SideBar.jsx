@@ -17,7 +17,7 @@ const SideBar = () => {
             <li><NavLink to={"/dashboard/admin/manage-users"}><MdOutlineManageAccounts className='text-lg'></MdOutlineManageAccounts> Manage Users</NavLink></li>
             <li><NavLink to={"/dashboard/admin/manage-semesters"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Manage Semesters</NavLink></li>
             <li><NavLink to={"/dashboard/admin/create-course"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Create Course</NavLink></li>
-            <li><NavLink to={"/dashboard/admin/assign-course"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Assign Course</NavLink></li>
+            <li><NavLink to={"/dashboard/admin/assign-course"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Assign & Offer Course</NavLink></li>
         </>
 
     const studentSidebar =
