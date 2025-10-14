@@ -193,7 +193,8 @@ const ManageSemester = () => {
                 <th>End Date</th>
                 <th>Status</th>
                 <th>Description</th>
-                <th>Actions</th>
+                <th>Update</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -214,10 +215,10 @@ const ManageSemester = () => {
                     <td>
                       <span
                         className={`capitalize badge ${s.status === "running"
-                          ? "badge-success"
+                          ? "badge badge-soft badge-warning"
                           : s.status === "upcoming"
-                            ? "badge-warning"
-                            : "badge-neutral"
+                            ? "badge badge-soft badge-primary"
+                            : "badge badge-soft badge-success"
                           }`}
                       >
                         {s.status}
@@ -228,16 +229,19 @@ const ManageSemester = () => {
                       {s.status !== "completed" && (
                         <button
                           onClick={() => handleMarkCurrentStatus(s._id, s.status)}
-                          className="btn btn-sm btn-info flex items-center justify-center gap-1 min-w-[170px]"
+                          className={`btn btn-sm ${s.status==="upcoming" ? "btn-primary" : "btn-primary btn-outline"} flex items-center justify-center gap-1 min-w-[130px]`}
                         >
                           {s.status === "running"
                             ? "Mark as Completed"
                             : "Mark as Running"}
                         </button>
                       )}
+
+                    </td>
+                    <td>
                       <button
                         onClick={() => handleDelete(s._id)}
-                        className="btn btn-sm btn-error flex items-center gap-1"
+                        className="btn-sm btn btn-soft btn-error flex items-center gap-1"
                       >
                         <FaTrash /> Delete
                       </button>

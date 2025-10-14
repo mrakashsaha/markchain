@@ -654,7 +654,6 @@ async function run() {
         app.post("/assignedCourses", async (req, res) => {
             try {
                 const { courseData } = req.body;
-
                 // Prevent duplicate assignment of the same course to same teacher in same semester
                 const exists = await assignedCoursesCollection.findOne({
                     courseCode: courseData.courseCode,
@@ -668,6 +667,8 @@ async function run() {
 
                 const result = await assignedCoursesCollection.insertOne({
                     ...courseData,
+                    isOffered: false,
+                    studentLimit: null,
                     assignedAt: new Date().toISOString(),
                 });
 
@@ -728,6 +729,8 @@ async function run() {
                             _id: 1,
                             courseCode: 1,
                             semesterCode: 1,
+                            isOffered: 1,
+                            studentLimit: 1,
                             "courseInfo.courseTitle": 1,
                             "courseInfo.credit": 1,
                             "courseInfo.department": 1,
@@ -749,9 +752,9 @@ async function run() {
 
 
         // ✅ PATCH — Update assigned course (if needed)
-        app.patch("/assignedCourses/:id", async (req, res) => {
+        app.patch("/assignedCourses", async (req, res) => {
             try {
-                const id = req.params.id;
+                const id = req.query.id;
                 const updatedData = req.body;
 
                 const result = await assignedCoursesCollection.updateOne(

@@ -10,13 +10,16 @@ const ManageAssignedCourses = () => {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [semesterFilter, setSemesterFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [offerModal, setOfferModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [studentLimit, setStudentLimit] = useState("");
 
+  const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [semesters, setSemesters] = useState([]);
 
-  // Fetch assigned courses
+  // ✅ Fetch assigned courses with filters
   const fetchAssignedCourses = async () => {
     setLoading(true);
     try {
@@ -33,27 +36,47 @@ const ManageAssignedCourses = () => {
     }
   };
 
-  // Fetch dependencies
+  // ✅ Fetch all dependencies once and auto-select running semester
   useEffect(() => {
-    fetchAssignedCourses();
-    nodeBackend.get("/courses").then(res => setCourses(res.data));
-    nodeBackend.get("/system-users?role=teacher&status=approved").then(res => setTeachers(res.data));
-    nodeBackend.get("/semesters").then(res => setSemesters(res.data));
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [coursesRes, teachersRes, semestersRes] = await Promise.all([
+          nodeBackend.get("/courses"),
+          nodeBackend.get("/system-users?role=teacher&status=approved"),
+          nodeBackend.get("/semesters"),
+        ]);
+
+        setCourses(coursesRes.data);
+        setTeachers(teachersRes.data);
+        setSemesters(semestersRes.data);
+
+        const currentSemester = semestersRes.data.find((s) => s.status === "running");
+        if (currentSemester) {
+          setSemesterFilter(currentSemester.semesterCode);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
+  // ✅ Refetch when filters change
   useEffect(() => {
     fetchAssignedCourses();
   }, [departmentFilter, semesterFilter]);
 
+  // ✅ Assign Course Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
     const courseData = Object.fromEntries(data.entries());
 
-    console.log(courseData)
-
     nodeBackend
-      .post("/assignedCourses", {courseData})
+      .post("/assignedCourses", { courseData })
       .then((res) => {
         if (res.data.insertedId) {
           CustomToast({ icon: "success", title: "Course assigned successfully" });
@@ -69,6 +92,7 @@ const ManageAssignedCourses = () => {
       });
   };
 
+  // ✅ Delete Assigned Course
   const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -80,7 +104,8 @@ const ManageAssignedCourses = () => {
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
-        nodeBackend.delete(`/assignedCourses/${id}`)
+        nodeBackend
+          .delete(`/assignedCourses/${id}`)
           .then((res) => {
             if (res.data.deletedCount > 0) {
               Swal.fire("Deleted!", "Assignment removed successfully.", "success");
@@ -94,6 +119,36 @@ const ManageAssignedCourses = () => {
     });
   };
 
+  // ✅ Offer or Close Course
+  const handleOffer = async (courseId, isOffered, limit = null) => {
+    try {
+      const payload = { isOffered };
+      if (isOffered) payload.studentLimit = Number(limit);
+
+      await nodeBackend.patch(`/assignedCourses?id=${courseId}`, payload);
+      CustomToast({
+        icon: "success",
+        title: isOffered
+          ? "Course offered successfully!"
+          : "Course closed successfully!",
+      });
+      fetchAssignedCourses();
+      setOfferModal(false);
+      setSelectedCourse(null);
+      setStudentLimit("");
+    } catch (error) {
+      console.error(error);
+      CustomToast({ icon: "error", title: "Failed to update offer status" });
+    }
+  };
+
+  // ✅ Handle Offer Modal Open
+  const openOfferModal = (course) => {
+    setSelectedCourse(course);
+    setStudentLimit(course.studentLimit || ""); // prefill previous value
+    setOfferModal(true);
+  };
+
   if (loading) return <LoadingSpiner />;
 
   return (
@@ -101,8 +156,11 @@ const ManageAssignedCourses = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-primary">Manage Assigned Courses</h1>
-          <button onClick={() => setShowModal(true)} className="btn btn-primary flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-primary">Assign and Offer Courses</h1>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
             <FaPlus /> Assign Course
           </button>
         </div>
@@ -128,7 +186,7 @@ const ManageAssignedCourses = () => {
             <option value="all">All Semesters</option>
             {semesters.map((s) => (
               <option key={s._id} value={s.semesterCode}>
-                {s.semesterName} {s.year}
+                {s.semesterName} {s.year} {s.status === "running" && "(Current)"}
               </option>
             ))}
           </select>
@@ -144,30 +202,62 @@ const ManageAssignedCourses = () => {
                 <th>Course Title</th>
                 <th>Credit</th>
                 <th>Teacher</th>
-                <th>Wallet</th>
                 <th>Semester</th>
-                <th>Actions</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody>
               {assignedCourses.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-4">No assigned courses found.</td>
+                  <td colSpan="9" className="text-center py-4">
+                    No assigned courses found.
+                  </td>
                 </tr>
               ) : (
                 assignedCourses.map((a, i) => (
                   <tr key={a._id}>
                     <td>{i + 1}</td>
                     <td>{a.courseCode}</td>
-                    <td>{a.courseInfo.courseTitle}</td>
-                    <td>{a.courseInfo.credit}</td>
-                    <td>{a.teacherInfo.teacherName}</td>
-                    <td className="text-xs">{a.teacherInfo.walletAddress}</td>
-                    <td>{a.semesterInfo.semesterName} {a.semesterInfo.year}</td>
+                    <td>{a.courseInfo?.courseTitle}</td>
+                    <td>{a.courseInfo?.credit}</td>
+                    <td>{a.teacherInfo?.teacherName}</td>
+                    <td>
+                      {a.semesterInfo?.semesterName} {a.semesterInfo?.year}
+                    </td>
+                    <td>
+                      {a.isOffered ? (
+                        <span className="badge badge-success badge-soft">
+                          Offered ({a.studentLimit})
+                        </span>
+                      ) : (
+                        <span className="badge badge-warning badge-soft">
+                          Not Offered
+                        </span>
+                      )}
+                    </td>
+                    <td className="flex flex-wrap gap-2">
+                      {a.isOffered ? (
+                        <button
+                          onClick={() => handleOffer(a._id, false)}
+                          className="btn px-4 btn-sm btn-neutral"
+                        >
+                          Close Offer
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openOfferModal(a)}
+                          className="btn btn-sm btn-primary"
+                        >
+                          Offer Course
+                        </button>
+                      )}
+                    </td>
                     <td>
                       <button
                         onClick={() => handleDelete(a._id)}
-                        className="btn btn-sm btn-error flex items-center gap-1"
+                        className="btn btn-sm btn-error btn-soft flex items-center gap-1"
                       >
                         <FaTrash /> Delete
                       </button>
@@ -179,55 +269,116 @@ const ManageAssignedCourses = () => {
           </table>
         </div>
 
-        {/* Modal */}
-        {showModal && <input type="checkbox" id="assign-course-modal" className="modal-toggle" checked readOnly />}
-        <div className={`modal ${showModal ? "modal-open" : ""}`}>
-          <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
-            <h3 className="font-bold text-lg text-primary mb-4">Assign Course to Teacher</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <label className="label">
-                <span className="label-text">Course</span>
-              </label>
-              <select name="courseCode" className="select select-bordered w-full bg-base-300 text-gray-200" required>
-                <option value="">Select Course</option>
-                {courses.map((c) => (
-                  <option key={c._id} value={c.courseCode}>
-                    {c.courseTitle} ({c.courseCode})
-                  </option>
-                ))}
-              </select>
+        {/* ✅ Offer Modal */}
+        {offerModal && (
+          <dialog open className="modal">
+            <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
+              <h3 className="font-bold text-lg text-primary mb-4">
+                Offer Course: {selectedCourse?.courseInfo?.courseTitle}
+              </h3>
 
-              <label className="label">
-                <span className="label-text">Teacher</span>
-              </label>
-              <select name="teacherWallet" className="select select-bordered w-full bg-base-300 text-gray-200" required>
-                <option value="">Select Teacher</option>
-                {teachers.map((t) => (
-                  <option key={t._id} value={t.walletAddress}>
-                    {t.teacherName} [{t.department}] - {t.teacherEmail}
-                  </option>
-                ))}
-              </select>
-
-              <label className="label">
-                <span className="label-text">Semester</span>
-              </label>
-              <select name="semesterCode" className="select select-bordered w-full bg-base-300 text-gray-200" required>
-                <option value="">Select Semester</option>
-                {semesters.map((s) => (
-                  <option key={s._id} value={s.semesterCode}>
-                    {s.semesterName} {s.year}
-                  </option>
-                ))}
-              </select>
+              <div className="fieldset">
+                <label className="label">Student Limit</label>
+                <input
+                  value={studentLimit}
+                  onChange={(e) => setStudentLimit(e.target.value)}
+                  type="number"
+                  className="input w-full"
+                  placeholder="Enter student limit"
+                />
+              </div>
 
               <div className="modal-action">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Assign</button>
+                <button
+                  onClick={() => setOfferModal(false)}
+                  className="btn btn-sm btn-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() =>
+                    handleOffer(selectedCourse._id, true, studentLimit)
+                  }
+                  className="btn btn-sm btn-primary"
+                  disabled={!studentLimit}
+                >
+                  Confirm Offer
+                </button>
               </div>
-            </form>
+            </div>
+          </dialog>
+        )}
+
+        {/* Assign Modal (unchanged) */}
+        {showModal && (
+          <div className={`modal ${showModal ? "modal-open" : ""}`}>
+            <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
+              <h3 className="font-bold text-lg text-primary mb-4">
+                Assign Course to Teacher
+              </h3>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <label className="label">Course</label>
+                <select
+                  name="courseCode"
+                  className="select select-bordered w-full bg-base-300 text-gray-200"
+                  required
+                >
+                  <option value="">Select Course</option>
+                  {courses.map((c) => (
+                    <option key={c._id} value={c.courseCode}>
+                      {c.courseTitle} ({c.courseCode})
+                    </option>
+                  ))}
+                </select>
+
+                <label className="label">Teacher</label>
+                <select
+                  name="teacherWallet"
+                  className="select select-bordered w-full bg-base-300 text-gray-200"
+                  required
+                >
+                  <option value="">Select Teacher</option>
+                  {teachers.map((t) => (
+                    <option key={t._id} value={t.walletAddress}>
+                      {t.teacherName} [{t.department}] - {t.teacherEmail}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="label">Semester</label>
+                <select
+                  name="semesterCode"
+                  defaultValue={
+                    semesters.find((s) => s.status === "running")?.semesterCode || ""
+                  }
+                  className="select select-bordered w-full bg-base-300 text-gray-200"
+                  required
+                >
+                  <option value="">Select Semester</option>
+                  {semesters.map((s) => (
+                    <option key={s._id} value={s.semesterCode}>
+                      {s.semesterName} {s.year}{" "}
+                      {s.status === "running" && "(Current)"}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="modal-action">
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Assign
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
