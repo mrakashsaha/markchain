@@ -14,6 +14,9 @@ import ManageUsers from './pages/Dashboard/admin/ManageUser.jsx';
 import RejectedAccount from './components/RejectedAccount.jsx';
 import ManageSemester from './pages/Dashboard/admin/ManageSemester.jsx';
 import AdminHome from './pages/Dashboard/admin/AdminHome';
+import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
+import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
+import EnrollCourses from './pages/Dashboard/student.jsx/EnrollCourses.jsx';
 
 const router = createBrowserRouter([
   {
@@ -65,15 +68,11 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/create-course",
-        element: <h2>Create New Course</h2>,
+        element: <CreateCourses></CreateCourses>,
       },
       {
         path: "admin/assign-course",
-        element: <h2>Assign Course to Faculty for Specific Semester</h2>,
-      },
-      {
-        path: "admin/reports",
-        element: <h2>View Academic Reports</h2>,
+        element: <ManageAssignedCourses></ManageAssignedCourses>,
       },
 
       // ========================= STUDENT ROUTES =========================
@@ -82,12 +81,12 @@ const router = createBrowserRouter([
         element: <h2>Student Dashboard Home</h2>,
       },
       {
-        path: "student/offer-course",
-        element: <h2>Offer Courses</h2>,
+        path: "student/my-course",
+        element: <h2>My Courses</h2>,
       },
       {
-        path: "student/enrolled-courses",
-        element: <h2>My Enrolled Courses</h2>,
+        path: "student/enroll-courses",
+        element: <EnrollCourses></EnrollCourses>,
       },
       {
         path: "student/results",

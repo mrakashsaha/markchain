@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 const crypto = require('crypto');
 require('@dotenvx/dotenvx').config()
 const app = express()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 
@@ -275,16 +275,16 @@ app.post("/sendEmail", async (req, res) => {
 
         // If we got here, sendEmail() didn't throw an error
         if (result.toString().slice(0, 3) == 250) {
-            res.send({ sucess: true, message: "Login Credentials sent to email successfully" });
+            res.send({ success: true, message: "Login Credentials sent to email successfully" });
         }
 
         else {
-            res.send({ sucess: false, message: "Failed to send Login Credentials in your email" });
+            res.send({ success: false, message: "Failed to send Login Credentials in your email" });
         }
 
     } catch (error) {
         console.log(error)
-        res.send({ sucess: false, message: "Failed to send Login Credentials in your email" });
+        res.send({ success: false, message: "Failed to send Login Credentials in your email" });
     }
 });
 
@@ -304,6 +304,10 @@ const client = new MongoClient(uri, {
 
 
 const usersCollection = client.db("markChainDB").collection("users");
+const semestersCollection = client.db("markChainDB").collection("semesters");
+const coursesCollection = client.db("markChainDB").collection("courses");
+const assignedCoursesCollection = client.db("markChainDB").collection("assignedCourses");
+
 
 async function run() {
     try {
@@ -329,7 +333,7 @@ async function run() {
                 const duplicateWallet = await usersCollection.findOne({ walletAddress: userInfo.walletAddress })
 
                 if (duplicateWallet) {
-                    res.status(400).json({ sucess: false, message: "This wallet address is already registered." });
+                    res.status(400).json({ success: false, message: "This wallet address is already registered." });
 
                 }
                 else {
@@ -339,7 +343,7 @@ async function run() {
 
             }
             catch (error) {
-                res.status(500).json({ sucess: false, message: "Internal Server Error" });
+                res.status(500).json({ success: false, message: "Internal Server Error" });
                 console.log(error)
             }
         })
@@ -379,8 +383,6 @@ async function run() {
                 res.status(500).json({ error: "Server error" });
             }
         });
-
-
 
         // manage users status approve / reject and 
         app.patch("/system-users", async (req, res) => {
@@ -427,6 +429,354 @@ async function run() {
         });
 
 
+
+        // Manage semisters
+
+        // Create new semester
+        app.post("/semesters", async (req, res) => {
+            try {
+
+                const { semesterData } = req.body;
+                // Check for uniqueness
+                const existing = await semestersCollection.findOne({ semesterCode: semesterData.semesterCode });
+                if (existing) {
+                    return res.status(400).send({ error: "Semester code already exists" });
+                }
+
+                const result = await semestersCollection.insertOne(semesterData);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+        // Get Semister
+        app.get("/semesters", async (req, res) => {
+            try {
+                const { status, search } = req.query;
+                const filter = {};
+
+                if (status && status !== "all") filter.status = status;
+
+                if (search) {
+                    const searchRegex = new RegExp(search, "i");
+                    filter.$or = [
+                        { semesterName: searchRegex },
+                        { semesterCode: searchRegex },
+                        { description: searchRegex },
+                    ];
+                }
+
+                const semesters = await semestersCollection.find(filter).toArray();
+                res.send(semesters);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // // update semister status
+        // app.patch("/semesters", async (req, res) => {
+        //     try {
+        //         const id = req.query.id;
+        //         const { status } = req.body;
+
+        //         if (!id || !status) {
+        //             return res.status(400).send({ error: "id and status are required" });
+        //         }
+
+        //         const result = await semestersCollection.updateOne(
+        //             { _id: new ObjectId(id) },
+        //             { $set: { status } }
+        //         );
+
+        //         if (result.matchedCount === 0) {
+        //             return res.status(404).send({ error: "Semester not found" });
+        //         }
+
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error(error);
+        //         res.status(500).send({ error: "Server error" });
+        //     }
+        // });
+
+
+
+        app.patch("/semesters", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const { status } = req.body;
+
+                if (!id || !status) {
+                    return res.status(400).send({ error: "id and status are required" });
+                }
+
+                // If trying to set a semester as "running", ensure no other running semester exists
+                if (status === "running") {
+                    const alreadyRunning = await semestersCollection.findOne({
+                        status: "running",
+                        _id: { $ne: new ObjectId(id) } // exclude the same one being updated
+                    });
+
+                    if (alreadyRunning) {
+                        return res.status(400).send({
+                            error: `Another semester (${alreadyRunning.semesterName} ${alreadyRunning.year}) is already running. Please complete it first.`
+                        });
+                    }
+                }
+
+                // Proceed with update
+                const result = await semestersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { status } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ error: "Semester not found" });
+                }
+
+                res.send(result);
+
+            } catch (error) {
+                console.error("Error updating semester:", error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+
+        // delete a semister 
+        app.delete("/semesters", async (req, res) => {
+            try {
+                const id = req.query.id;
+
+                if (!id) {
+                    return res.status(400).send({ error: "id is required" });
+                }
+
+                const result = await semestersCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ error: "Semester not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+
+        // Manage Course\
+        app.get("/courses", async (req, res) => {
+            try {
+                const { search } = req.query;
+                const filter = {};
+
+                if (search) {
+                    const regex = new RegExp(search, "i");
+                    filter.$or = [
+                        { courseCode: regex },
+                        { courseTitle: regex },
+                        { department: regex },
+                    ];
+                }
+
+                const result = await coursesCollection.find(filter).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // ✅ POST
+        app.post("/courses", async (req, res) => {
+            try {
+                const { courseData } = req.body;
+
+                courseData.credit = Number(courseData.credit);
+                courseData.createdAt = new Date();
+
+                const existing = await coursesCollection.findOne({ courseCode: courseData.courseCode });
+                if (existing) {
+                    return res.status(400).send({ error: "Course code already exists" });
+                }
+
+                const result = await coursesCollection.insertOne(courseData);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // PATCH
+        app.patch("/courses", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const updateData = req.body;
+                if (updateData.credit) updateData.credit = Number(updateData.credit);
+
+                const result = await coursesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updateData }
+                );
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+        // ✅ DELETE
+        app.delete("/courses", async (req, res) => {
+            try {
+                const id = req.query.id;
+                const result = await coursesCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server error" });
+            }
+        });
+
+
+
+        // Assigned course==========================
+        app.post("/assignedCourses", async (req, res) => {
+            try {
+                const { courseData } = req.body;
+
+                // Prevent duplicate assignment of the same course to same teacher in same semester
+                const exists = await assignedCoursesCollection.findOne({
+                    courseCode: courseData.courseCode,
+                    teacherWallet: courseData.teacherWallet,
+                    semesterCode: courseData.semesterCode,
+                });
+
+                if (exists) {
+                    return res.status(400).send({ error: "This course is already assigned to this teacher for this semester" });
+                }
+
+                const result = await assignedCoursesCollection.insertOne({
+                    ...courseData,
+                    assignedAt: new Date().toISOString(),
+                });
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+        // ✅ GET — Fetch assigned courses (supports filter & search)
+        app.get("/assignedCourses", async (req, res) => {
+            try {
+                const { department, semesterCode, search } = req.query;
+
+                const match = {};
+                if (department && department !== "all") match["courseInfo.department"] = department;
+                if (semesterCode && semesterCode !== "all") match["semesterCode"] = semesterCode;
+
+                if (search) {
+                    match["$or"] = [
+                        { "courseInfo.courseTitle": { $regex: search, $options: "i" } },
+                        { "teacherInfo.teacherName": { $regex: search, $options: "i" } }
+                    ];
+                }
+
+                const assignedCourses = await assignedCoursesCollection.aggregate([
+                    {
+                        $lookup: {
+                            from: "courses",
+                            localField: "courseCode",
+                            foreignField: "courseCode",
+                            as: "courseInfo",
+                        },
+                    },
+                    { $unwind: "$courseInfo" },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "teacherWallet",
+                            foreignField: "walletAddress",
+                            as: "teacherInfo",
+                        },
+                    },
+                    { $unwind: "$teacherInfo" },
+                    {
+                        $lookup: {
+                            from: "semesters",
+                            localField: "semesterCode",
+                            foreignField: "semesterCode",
+                            as: "semesterInfo",
+                        },
+                    },
+                    { $unwind: "$semesterInfo" },
+                    { $match: match },
+                    {
+                        $project: {
+                            _id: 1,
+                            courseCode: 1,
+                            semesterCode: 1,
+                            "courseInfo.courseTitle": 1,
+                            "courseInfo.credit": 1,
+                            "courseInfo.department": 1,
+                            "teacherInfo.teacherName": 1,
+                            "teacherInfo.walletAddress": 1,
+                            "teacherInfo.teacherEmail": 1,
+                            "semesterInfo.semesterName": 1,
+                            "semesterInfo.year": 1,
+                        },
+                    },
+                ]).toArray();
+
+                res.send(assignedCourses);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send({ error: "Failed to fetch assigned courses" });
+            }
+        });
+
+
+        // ✅ PATCH — Update assigned course (if needed)
+        app.patch("/assignedCourses/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const updatedData = req.body;
+
+                const result = await assignedCoursesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedData }
+                );
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+        // ✅ DELETE — Remove an assigned course
+        app.delete("/assignedCourses/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const result = await assignedCoursesCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "Server Error" });
+            }
+        });
 
 
 

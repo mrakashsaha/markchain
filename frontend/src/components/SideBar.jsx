@@ -18,14 +18,13 @@ const SideBar = () => {
             <li><NavLink to={"/dashboard/admin/manage-semesters"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Manage Semesters</NavLink></li>
             <li><NavLink to={"/dashboard/admin/create-course"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Create Course</NavLink></li>
             <li><NavLink to={"/dashboard/admin/assign-course"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Assign Course</NavLink></li>
-            <li><NavLink to={"/dashboard/admin/reports"}><BsDatabaseGear className='text-lg'></BsDatabaseGear> Reports</NavLink></li>
         </>
 
     const studentSidebar =
         <>
             <li><NavLink to={"/dashboard/student/home"}><RiHome9Line className='text-lg' /> Home</NavLink></li>
-            <li><NavLink to={"/dashboard/student/offer-course"}><BsDatabaseGear className='text-lg' /> Offer Courses</NavLink></li>
-            <li><NavLink to={"/dashboard/student/enrolled-courses"}><BsDatabaseGear className='text-lg' /> Enrolled Courses</NavLink></li>
+            <li><NavLink to={"/dashboard/student/my-course"}><BsDatabaseGear className='text-lg' /> My Courses</NavLink></li>
+            <li><NavLink to={"/dashboard/student/enroll-courses"}><BsDatabaseGear className='text-lg' /> Enroll Course</NavLink></li>
             <li><NavLink to={"/dashboard/student/results"}><BsDatabaseGear className='text-lg' /> Results</NavLink></li>
         </>
 
