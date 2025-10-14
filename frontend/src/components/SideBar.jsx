@@ -23,8 +23,8 @@ const SideBar = () => {
     const studentSidebar =
         <>
             <li><NavLink to={"/dashboard/student/home"}><RiHome9Line className='text-lg' /> Home</NavLink></li>
-            <li><NavLink to={"/dashboard/student/offer-course"}><BsDatabaseGear className='text-lg' /> Offer Courses</NavLink></li>
-            <li><NavLink to={"/dashboard/student/enrolled-courses"}><BsDatabaseGear className='text-lg' /> Enrolled Courses</NavLink></li>
+            <li><NavLink to={"/dashboard/student/my-course"}><BsDatabaseGear className='text-lg' /> My Courses</NavLink></li>
+            <li><NavLink to={"/dashboard/student/enroll-courses"}><BsDatabaseGear className='text-lg' /> Enroll Course</NavLink></li>
             <li><NavLink to={"/dashboard/student/results"}><BsDatabaseGear className='text-lg' /> Results</NavLink></li>
         </>
 
