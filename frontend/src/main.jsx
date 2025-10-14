@@ -13,6 +13,7 @@ import DashboardHome from './pages/Dashboard/DashboardHome.jsx';
 import ManageUsers from './pages/Dashboard/admin/ManageUser.jsx';
 import RejectedAccount from './components/RejectedAccount.jsx';
 import ManageSemester from './pages/Dashboard/admin/ManageSemester.jsx';
+import AdminHome from './pages/Dashboard/admin/AdminHome';
 import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
 import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
 import EnrollCourses from './pages/Dashboard/student.jsx/EnrollCourses.jsx';
@@ -55,7 +56,7 @@ const router = createBrowserRouter([
 
       {
         path: "admin/home",
-        element: <h2>Admin Dashboard Home</h2>,
+        element: <AdminHome></AdminHome>,
       },
       {
         path: "admin/manage-users",
