@@ -477,7 +477,34 @@ async function run() {
             }
         });
 
-        // update semister status
+        // // update semister status
+        // app.patch("/semesters", async (req, res) => {
+        //     try {
+        //         const id = req.query.id;
+        //         const { status } = req.body;
+
+        //         if (!id || !status) {
+        //             return res.status(400).send({ error: "id and status are required" });
+        //         }
+
+        //         const result = await semestersCollection.updateOne(
+        //             { _id: new ObjectId(id) },
+        //             { $set: { status } }
+        //         );
+
+        //         if (result.matchedCount === 0) {
+        //             return res.status(404).send({ error: "Semester not found" });
+        //         }
+
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error(error);
+        //         res.status(500).send({ error: "Server error" });
+        //     }
+        // });
+
+
+
         app.patch("/semesters", async (req, res) => {
             try {
                 const id = req.query.id;
@@ -487,6 +514,21 @@ async function run() {
                     return res.status(400).send({ error: "id and status are required" });
                 }
 
+                // If trying to set a semester as "running", ensure no other running semester exists
+                if (status === "running") {
+                    const alreadyRunning = await semestersCollection.findOne({
+                        status: "running",
+                        _id: { $ne: new ObjectId(id) } // exclude the same one being updated
+                    });
+
+                    if (alreadyRunning) {
+                        return res.status(400).send({
+                            error: `Another semester (${alreadyRunning.semesterName} ${alreadyRunning.year}) is already running. Please complete it first.`
+                        });
+                    }
+                }
+
+                // Proceed with update
                 const result = await semestersCollection.updateOne(
                     { _id: new ObjectId(id) },
                     { $set: { status } }
@@ -497,11 +539,13 @@ async function run() {
                 }
 
                 res.send(result);
+
             } catch (error) {
-                console.error(error);
+                console.error("Error updating semester:", error);
                 res.status(500).send({ error: "Server error" });
             }
         });
+
 
 
         // delete a semister 

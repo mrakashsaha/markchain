@@ -80,7 +80,7 @@ const ManageSemester = () => {
         currentStatus === "upcoming" ? "running" : "completed";
 
       const res = await nodeBackend.patch(`/semesters?id=${id}`, { status: newStatus });
-
+      console.log(res.data);
       if (res.data.modifiedCount > 0) {
         CustomToast({
           icon: "success",
@@ -296,8 +296,8 @@ const ManageSemester = () => {
                     required
                   >
                     <option value="upcoming">Upcoming</option>
-                    <option value="running">Running</option>
-                    <option value="completed">Completed</option>
+                    <option disabled value="running">Running</option>
+                    <option disabled value="completed">Completed</option>
                   </select>
                 </div>
               </div>
