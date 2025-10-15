@@ -788,6 +788,361 @@ async function run() {
         // Student Route============================
         // Get / View offer coureses
 
+        // app.get("/offer-courses", async (req, res) => {
+        //     try {
+        //         const { studentWallet, search } = req.query;
+
+        //         if (!studentWallet) {
+        //             return res.status(400).json({ message: "Student wallet is required" });
+        //         }
+
+        //         // 1. Get student info
+        //         const student = await usersCollection.findOne({ walletAddress: studentWallet });
+        //         if (!student) return res.status(404).json({ message: "Student not found" });
+
+        //         const studentDept = student.department;
+
+        //         // 2. Get running semesters
+        //         const runningSemesters = await semestersCollection
+        //             .find({ status: "running" })
+        //             .project({ semesterCode: 1 })
+        //             .toArray();
+
+        //         const runningSemesterCodes = runningSemesters.map(s => s.semesterCode);
+
+        //         // 3. Base aggregation pipeline
+        //         const pipeline = [
+        //             // Only offered courses in running semesters
+        //             { $match: { isOffered: true, semesterCode: { $in: runningSemesterCodes } } },
+
+        //             // Join with courses
+        //             {
+        //                 $lookup: {
+        //                     from: "courses",
+        //                     localField: "courseCode",
+        //                     foreignField: "courseCode",
+        //                     as: "courseDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$courseDetails" },
+
+        //             // Filter by student department
+        //             { $match: { "courseDetails.department": studentDept } },
+
+        //             // Join with semesters
+        //             {
+        //                 $lookup: {
+        //                     from: "semesters",
+        //                     localField: "semesterCode",
+        //                     foreignField: "semesterCode",
+        //                     as: "semesterDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$semesterDetails" },
+
+        //             // Join with users (teacher info)
+        //             {
+        //                 $lookup: {
+        //                     from: "users",
+        //                     localField: "teacherWallet",
+        //                     foreignField: "walletAddress",
+        //                     as: "teacherDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$teacherDetails" },
+
+        //             // Count total enrolled students
+        //             {
+        //                 $lookup: {
+        //                     from: "enrollment",
+        //                     localField: "_id",
+        //                     foreignField: "assignedCourseId",
+        //                     as: "enrolledStudents",
+        //                 },
+        //             },
+
+        //             // Get current student enrollment for type and status
+        //             {
+        //                 $lookup: {
+        //                     from: "enrollment",
+        //                     let: { courseId: "$_id", courseCode: "$courseCode" },
+        //                     pipeline: [
+        //                         {
+        //                             $match: {
+        //                                 $expr: {
+        //                                     $and: [
+        //                                         { $eq: ["$studentWallet", studentWallet] },
+        //                                         { $eq: ["$courseCode", "$$courseCode"] },
+        //                                     ],
+        //                                 },
+        //                             },
+        //                         },
+        //                         { $sort: { enrolledAt: -1 } }, // latest enrollment first
+        //                     ],
+        //                     as: "studentHistory",
+        //                 },
+        //             },
+
+        //             // Add fields: enrolledCount, type, currentStatus
+        //             {
+        //                 $addFields: {
+        //                     enrolledCount: { $size: "$enrolledStudents" },
+        //                     type: {
+        //                         $cond: [
+        //                             {
+        //                                 $gt: [
+        //                                     {
+        //                                         $size: {
+        //                                             $filter: {
+        //                                                 input: "$studentHistory",
+        //                                                 as: "s",
+        //                                                 cond: { $eq: ["$$s.status", "completed"] },
+        //                                             },
+        //                                         },
+        //                                     },
+        //                                     0,
+        //                                 ],
+        //                             },
+        //                             "retake",
+        //                             "regular",
+        //                         ],
+        //                     },
+        //                     currentStatus: {
+        //                         $cond: [
+        //                             { $gt: [{ $size: "$studentHistory" }, 0] },
+        //                             { $arrayElemAt: ["$studentHistory.status", 0] }, // latest enrollment status
+        //                             null, // not enrolled
+        //                         ],
+        //                     },
+        //                 },
+        //             },
+        //         ];
+
+        //         // Optional search
+        //         if (search) {
+        //             pipeline.push({
+        //                 $match: {
+        //                     $or: [
+        //                         { "courseDetails.courseTitle": { $regex: search, $options: "i" } },
+        //                         { "courseDetails.courseCode": { $regex: search, $options: "i" } },
+        //                         { "teacherDetails.teacherName": { $regex: search, $options: "i" } },
+        //                     ],
+        //                 },
+        //             });
+        //         }
+
+        //         // Final projection
+        //         pipeline.push({
+        //             $project: {
+        //                 _id: 1,
+        //                 courseCode: 1,
+        //                 courseTitle: "$courseDetails.courseTitle",
+        //                 credit: "$courseDetails.credit",
+        //                 department: "$courseDetails.department",
+        //                 prerequisites: "$courseDetails.prerequisites",
+        //                 description: "$courseDetails.description",
+        //                 semesterCode: "$semesterDetails.semesterCode",
+        //                 semesterName: "$semesterDetails.semesterName",
+        //                 semesterYear: "$semesterDetails.year",
+        //                 teacherWallet: "$teacherDetails.walletAddress",
+        //                 teacherName: "$teacherDetails.teacherName",
+        //                 teacherEmail: "$teacherDetails.teacherEmail",
+        //                 teacherPhone: "$teacherDetails.teacherPhone",
+        //                 designation: "$teacherDetails.designation",
+        //                 studentLimit: 1,
+        //                 enrolledCount: 1,
+        //                 type: 1,
+        //                 currentStatus: 1, // enrolled/dropped/null
+        //                 assignedAt: 1,
+        //             },
+        //         });
+
+        //         const offeredCourses = await assignedCoursesCollection.aggregate(pipeline).toArray();
+
+        //         res.status(200).json(offeredCourses);
+        //     } catch (err) {
+        //         console.error("Error fetching offered courses:", err);
+        //         res.status(500).json({ message: "Server error" });
+        //     }
+        // });
+
+
+        // app.get("/offer-courses", async (req, res) => {
+        //     try {
+        //         const { studentWallet, search } = req.query;
+
+        //         if (!studentWallet) {
+        //             return res.status(400).json({ message: "Student wallet is required" });
+        //         }
+
+        //         // 1. Get student info
+        //         const student = await usersCollection.findOne({ walletAddress: studentWallet });
+        //         if (!student) return res.status(404).json({ message: "Student not found" });
+        //         const studentDept = student.department;
+
+        //         // 2. Get running semesters
+        //         const runningSemesters = await semestersCollection
+        //             .find({ status: "running" })
+        //             .project({ semesterCode: 1 })
+        //             .toArray();
+        //         const runningSemesterCodes = runningSemesters.map(s => s.semesterCode);
+
+        //         // If multiple running semesters, consider the first as "current"
+        //         const currentSemesterCode = runningSemesterCodes[0];
+
+        //         const pipeline = [
+        //             // Only offered courses in running semesters
+        //             { $match: { isOffered: true, semesterCode: { $in: runningSemesterCodes } } },
+
+        //             // Join with courses
+        //             {
+        //                 $lookup: {
+        //                     from: "courses",
+        //                     localField: "courseCode",
+        //                     foreignField: "courseCode",
+        //                     as: "courseDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$courseDetails" },
+
+        //             // Filter by student department
+        //             { $match: { "courseDetails.department": studentDept } },
+
+        //             // Join with semesters
+        //             {
+        //                 $lookup: {
+        //                     from: "semesters",
+        //                     localField: "semesterCode",
+        //                     foreignField: "semesterCode",
+        //                     as: "semesterDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$semesterDetails" },
+
+        //             // Join with teacher info
+        //             {
+        //                 $lookup: {
+        //                     from: "users",
+        //                     localField: "teacherWallet",
+        //                     foreignField: "walletAddress",
+        //                     as: "teacherDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$teacherDetails" },
+
+        //             // Get all student enrollments for this course (any semester)
+        //             {
+        //                 $lookup: {
+        //                     from: "enrollment",
+        //                     let: { courseCode: "$courseCode" },
+        //                     pipeline: [
+        //                         {
+        //                             $match: {
+        //                                 $expr: {
+        //                                     $and: [{ $eq: ["$studentWallet", studentWallet] }, { $eq: ["$courseCode", "$$courseCode"] }],
+        //                                 },
+        //                             },
+        //                         },
+        //                     ],
+        //                     as: "studentEnrollments",
+        //                 },
+        //             },
+
+        //             // Add fields: type, isEnrolled, enrolledCount
+        //             {
+        //                 $addFields: {
+        //                     enrolledCount: { $size: "$studentEnrollments" }, // total students enrolled
+        //                     type: {
+        //                         $cond: [
+        //                             {
+        //                                 $gt: [
+        //                                     {
+        //                                         $size: {
+        //                                             $filter: {
+        //                                                 input: "$studentEnrollments",
+        //                                                 as: "s",
+        //                                                 cond: { $ne: ["$$s.semesterCode", currentSemesterCode] }, // any previous semester
+        //                                             },
+        //                                         },
+        //                                     },
+        //                                     0,
+        //                                 ],
+        //                             },
+        //                             "retake",
+        //                             "regular",
+        //                         ],
+        //                     },
+        //                     isEnrolled: {
+        //                         $cond: [
+        //                             {
+        //                                 $gt: [
+        //                                     {
+        //                                         $size: {
+        //                                             $filter: {
+        //                                                 input: "$studentEnrollments",
+        //                                                 as: "s",
+        //                                                 cond: { $eq: ["$$s.semesterCode", currentSemesterCode] }, // current semester
+        //                                             },
+        //                                         },
+        //                                     },
+        //                                     0,
+        //                                 ],
+        //                             },
+        //                             true,
+        //                             false,
+        //                         ],
+        //                     },
+        //                 },
+        //             },
+        //         ];
+
+        //         // Optional search
+        //         if (search) {
+        //             pipeline.push({
+        //                 $match: {
+        //                     $or: [
+        //                         { "courseDetails.courseTitle": { $regex: search, $options: "i" } },
+        //                         { "courseDetails.courseCode": { $regex: search, $options: "i" } },
+        //                         { "teacherDetails.teacherName": { $regex: search, $options: "i" } },
+        //                     ],
+        //                 },
+        //             });
+        //         }
+
+        //         // Projection
+        //         pipeline.push({
+        //             $project: {
+        //                 _id: 1,
+        //                 courseCode: 1,
+        //                 courseTitle: "$courseDetails.courseTitle",
+        //                 credit: "$courseDetails.credit",
+        //                 department: "$courseDetails.department",
+        //                 prerequisites: "$courseDetails.prerequisites",
+        //                 description: "$courseDetails.description",
+        //                 semesterCode: "$semesterDetails.semesterCode",
+        //                 semesterName: "$semesterDetails.semesterName",
+        //                 semesterYear: "$semesterDetails.year",
+        //                 teacherWallet: "$teacherDetails.walletAddress",
+        //                 teacherName: "$teacherDetails.teacherName",
+        //                 teacherEmail: "$teacherDetails.teacherEmail",
+        //                 teacherPhone: "$teacherDetails.teacherPhone",
+        //                 designation: "$teacherDetails.designation",
+        //                 studentLimit: 1,
+        //                 enrolledCount: 1,
+        //                 type: 1,
+        //                 isEnrolled: 1,
+        //                 assignedAt: 1,
+        //             },
+        //         });
+
+        //         const offeredCourses = await assignedCoursesCollection.aggregate(pipeline).toArray();
+        //         res.status(200).json(offeredCourses);
+        //     } catch (err) {
+        //         console.error("Error fetching offered courses:", err);
+        //         res.status(500).json({ message: "Server error" });
+        //     }
+        // });
+
         app.get("/offer-courses", async (req, res) => {
             try {
                 const { studentWallet, search } = req.query;
@@ -796,26 +1151,30 @@ async function run() {
                     return res.status(400).json({ message: "Student wallet is required" });
                 }
 
-                // 1. Get student info
+                // 1️⃣ Get student info
                 const student = await usersCollection.findOne({ walletAddress: studentWallet });
                 if (!student) return res.status(404).json({ message: "Student not found" });
-
                 const studentDept = student.department;
 
-                // 2. Get running semesters
+                // 2️⃣ Get current running semester(s)
                 const runningSemesters = await semestersCollection
                     .find({ status: "running" })
                     .project({ semesterCode: 1 })
                     .toArray();
 
-                const runningSemesterCodes = runningSemesters.map(s => s.semesterCode);
+                if (runningSemesters.length === 0) {
+                    return res.status(404).json({ message: "No running semester found" });
+                }
 
-                // 3. Base aggregation pipeline
+                const runningSemesterCodes = runningSemesters.map((s) => s.semesterCode);
+                const currentSemesterCode = runningSemesterCodes[0];
+
+                // 3️⃣ Build aggregation pipeline
                 const pipeline = [
-                    // Only offered courses in running semesters
+                    // Match only offered courses in running semesters
                     { $match: { isOffered: true, semesterCode: { $in: runningSemesterCodes } } },
 
-                    // Join with courses
+                    // Join with courses collection
                     {
                         $lookup: {
                             from: "courses",
@@ -826,7 +1185,7 @@ async function run() {
                     },
                     { $unwind: "$courseDetails" },
 
-                    // Filter by student department
+                    // Match student's department
                     { $match: { "courseDetails.department": studentDept } },
 
                     // Join with semesters
@@ -840,7 +1199,7 @@ async function run() {
                     },
                     { $unwind: "$semesterDetails" },
 
-                    // Join with users (teacher info)
+                    // Join with teacher info
                     {
                         $lookup: {
                             from: "users",
@@ -851,21 +1210,39 @@ async function run() {
                     },
                     { $unwind: "$teacherDetails" },
 
-                    // Count total enrolled students
+                    // Convert _id to string to match enrollment.assignedCourseId
                     {
-                        $lookup: {
-                            from: "enrollment",
-                            localField: "_id",
-                            foreignField: "assignedCourseId",
-                            as: "enrolledStudents",
+                        $addFields: {
+                            offerIdStr: { $toString: "$_id" },
                         },
                     },
 
-                    // Get current student enrollment for type and status
+                    // Get this student's enrollment for the current offered course
                     {
                         $lookup: {
                             from: "enrollment",
-                            let: { courseId: "$_id", courseCode: "$courseCode" },
+                            let: { offerId: "$offerIdStr" },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ["$studentWallet", studentWallet] },
+                                                { $eq: ["$assignedCourseId", "$$offerId"] },
+                                            ],
+                                        },
+                                    },
+                                },
+                            ],
+                            as: "studentCurrentOfferEnrollment",
+                        },
+                    },
+
+                    // Get all previous enrollments of this course by this student
+                    {
+                        $lookup: {
+                            from: "enrollment",
+                            let: { courseCode: "$courseCode" },
                             pipeline: [
                                 {
                                     $match: {
@@ -877,16 +1254,28 @@ async function run() {
                                         },
                                     },
                                 },
-                                { $sort: { enrolledAt: -1 } }, // latest enrollment first
                             ],
-                            as: "studentHistory",
+                            as: "studentAllCourseEnrollments",
                         },
                     },
 
-                    // Add fields: enrolledCount, type, currentStatus
+                    // Count how many total students are enrolled in this offered course
+                    {
+                        $lookup: {
+                            from: "enrollment",
+                            localField: "offerIdStr",
+                            foreignField: "assignedCourseId",
+                            as: "allEnrolledStudents",
+                        },
+                    },
+
+                    // Add computed fields
                     {
                         $addFields: {
-                            enrolledCount: { $size: "$enrolledStudents" },
+                            enrolledCount: { $size: "$allEnrolledStudents" },
+                            isEnrolled: {
+                                $cond: [{ $gt: [{ $size: "$studentCurrentOfferEnrollment" }, 0] }, true, false],
+                            },
                             type: {
                                 $cond: [
                                     {
@@ -894,9 +1283,9 @@ async function run() {
                                             {
                                                 $size: {
                                                     $filter: {
-                                                        input: "$studentHistory",
+                                                        input: "$studentAllCourseEnrollments",
                                                         as: "s",
-                                                        cond: { $eq: ["$$s.status", "completed"] },
+                                                        cond: { $ne: ["$$s.semesterCode", currentSemesterCode] },
                                                     },
                                                 },
                                             },
@@ -907,18 +1296,11 @@ async function run() {
                                     "regular",
                                 ],
                             },
-                            currentStatus: {
-                                $cond: [
-                                    { $gt: [{ $size: "$studentHistory" }, 0] },
-                                    { $arrayElemAt: ["$studentHistory.status", 0] }, // latest enrollment status
-                                    null, // not enrolled
-                                ],
-                            },
                         },
                     },
                 ];
 
-                // Optional search
+                // 🔍 Optional search filter
                 if (search) {
                     pipeline.push({
                         $match: {
@@ -941,8 +1323,10 @@ async function run() {
                         department: "$courseDetails.department",
                         prerequisites: "$courseDetails.prerequisites",
                         description: "$courseDetails.description",
+                        semesterCode: "$semesterDetails.semesterCode",
                         semesterName: "$semesterDetails.semesterName",
                         semesterYear: "$semesterDetails.year",
+                        teacherWallet: "$teacherDetails.walletAddress",
                         teacherName: "$teacherDetails.teacherName",
                         teacherEmail: "$teacherDetails.teacherEmail",
                         teacherPhone: "$teacherDetails.teacherPhone",
@@ -950,16 +1334,107 @@ async function run() {
                         studentLimit: 1,
                         enrolledCount: 1,
                         type: 1,
-                        currentStatus: 1, // enrolled/dropped/null
+                        isEnrolled: 1,
                         assignedAt: 1,
                     },
                 });
 
+                // 4️⃣ Execute aggregation
                 const offeredCourses = await assignedCoursesCollection.aggregate(pipeline).toArray();
-
                 res.status(200).json(offeredCourses);
+
             } catch (err) {
                 console.error("Error fetching offered courses:", err);
+                res.status(500).json({ message: "Server error" });
+            }
+        });
+
+
+
+
+
+        app.post("/enroll", async (req, res) => {
+            try {
+                const { enrollmentData } = req.body;
+
+                // 1️⃣ Basic validation
+                if (
+                    !enrollmentData ||
+                    !enrollmentData.studentWallet ||
+                    !enrollmentData.courseCode ||
+                    !enrollmentData.semesterCode ||
+                    !enrollmentData.assignedCourseId
+                ) {
+                    return res.status(400).json({ message: "Missing required enrollment fields." });
+                }
+
+                // 2️⃣ Verify the assigned course exists and is offered
+                const assignedCourse = await assignedCoursesCollection.findOne({
+                    _id: new ObjectId(enrollmentData.assignedCourseId),
+                });
+
+                if (!assignedCourse) {
+                    return res.status(404).json({ message: "Assigned course not found." });
+                }
+
+                if (!assignedCourse.isOffered) {
+                    return res.status(400).json({
+                        message: "This course is not currently offered for enrollment.",
+                    });
+                }
+
+                // 3️⃣ Check student limit (count total enrolled students)
+                const enrolledCount = await enrollmentCollection.countDocuments({
+                    assignedCourseId: enrollmentData.assignedCourseId,
+                });
+
+                if (enrolledCount >= assignedCourse.studentLimit) {
+                    return res.status(400).json({
+                        message: "Student limit reached for this course.",
+                    });
+                }
+
+                // 4️⃣ Check for duplicate enrollment (same course + same student + same semester)
+                const duplicate = await enrollmentCollection.findOne({
+                    studentWallet: enrollmentData.studentWallet,
+                    courseCode: enrollmentData.courseCode,
+                    semesterCode: enrollmentData.semesterCode,
+                });
+
+                if (duplicate) {
+                    return res.status(400).json({
+                        message: "You have already enrolled in this course for the current semester.",
+                    });
+                }
+
+                // 5️⃣ If all checks pass, insert enrollment
+                const result = await enrollmentCollection.insertOne(enrollmentData);
+                res.send(result)
+            } catch (error) {
+                console.error("Error during enrollment:", error);
+                res.status(500).json({ message: "Server error." });
+            }
+        });
+
+
+
+        app.delete("/enroll", async (req, res) => {
+            try {
+                const { studentWallet, assignedCourseId } = req.query;
+
+                if (!studentWallet || !assignedCourseId) {
+                    return res.status(400).json({ message: "studentWallet and assignedCourseId are required" });
+                }
+
+                const result = await enrollmentCollection.deleteOne({
+                    studentWallet,
+                    assignedCourseId,
+                });
+
+                res.send(result);
+
+            } catch (err) {
+                console.error("Error deleting enrollment:", err);
                 res.status(500).json({ message: "Server error" });
             }
         });

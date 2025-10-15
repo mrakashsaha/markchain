@@ -16,7 +16,8 @@ import ManageSemester from './pages/Dashboard/admin/ManageSemester.jsx';
 import AdminHome from './pages/Dashboard/admin/AdminHome';
 import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
 import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
-import EnrollCourses from './pages/Dashboard/student.jsx/EnrollCourses.jsx';
+import EnrollCourses from './pages/Dashboard/student/EnrollCourses.jsx';
+
 
 
 const router = createBrowserRouter([
