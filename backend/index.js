@@ -790,13 +790,30 @@ async function run() {
 
         app.get("/offer-courses", async (req, res) => {
             try {
-                const { department, semester, search } = req.query;
+                const { studentWallet, search } = req.query;
 
-                const matchStage = { isOffered: true };
-                if (semester) matchStage.semesterCode = semester;
+                if (!studentWallet) {
+                    return res.status(400).json({ message: "Student wallet is required" });
+                }
 
+                // 1. Get student info
+                const student = await usersCollection.findOne({ walletAddress: studentWallet });
+                if (!student) return res.status(404).json({ message: "Student not found" });
+
+                const studentDept = student.department;
+
+                // 2. Get running semesters
+                const runningSemesters = await semestersCollection
+                    .find({ status: "running" })
+                    .project({ semesterCode: 1 })
+                    .toArray();
+
+                const runningSemesterCodes = runningSemesters.map(s => s.semesterCode);
+
+                // 3. Base aggregation pipeline
                 const pipeline = [
-                    { $match: matchStage },
+                    // Only offered courses in running semesters
+                    { $match: { isOffered: true, semesterCode: { $in: runningSemesterCodes } } },
 
                     // Join with courses
                     {
@@ -808,6 +825,9 @@ async function run() {
                         },
                     },
                     { $unwind: "$courseDetails" },
+
+                    // Filter by student department
+                    { $match: { "courseDetails.department": studentDept } },
 
                     // Join with semesters
                     {
@@ -831,7 +851,7 @@ async function run() {
                     },
                     { $unwind: "$teacherDetails" },
 
-                    // Join with enrollment collection to count enrolled students
+                    // Count total enrolled students
                     {
                         $lookup: {
                             from: "enrollment",
@@ -841,33 +861,77 @@ async function run() {
                         },
                     },
 
-                    // Add only enrolledCount
+                    // Get current student enrollment for type and status
+                    {
+                        $lookup: {
+                            from: "enrollment",
+                            let: { courseId: "$_id", courseCode: "$courseCode" },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ["$studentWallet", studentWallet] },
+                                                { $eq: ["$courseCode", "$$courseCode"] },
+                                            ],
+                                        },
+                                    },
+                                },
+                                { $sort: { enrolledAt: -1 } }, // latest enrollment first
+                            ],
+                            as: "studentHistory",
+                        },
+                    },
+
+                    // Add fields: enrolledCount, type, currentStatus
                     {
                         $addFields: {
                             enrolledCount: { $size: "$enrolledStudents" },
+                            type: {
+                                $cond: [
+                                    {
+                                        $gt: [
+                                            {
+                                                $size: {
+                                                    $filter: {
+                                                        input: "$studentHistory",
+                                                        as: "s",
+                                                        cond: { $eq: ["$$s.status", "completed"] },
+                                                    },
+                                                },
+                                            },
+                                            0,
+                                        ],
+                                    },
+                                    "retake",
+                                    "regular",
+                                ],
+                            },
+                            currentStatus: {
+                                $cond: [
+                                    { $gt: [{ $size: "$studentHistory" }, 0] },
+                                    { $arrayElemAt: ["$studentHistory.status", 0] }, // latest enrollment status
+                                    null, // not enrolled
+                                ],
+                            },
                         },
                     },
                 ];
 
-                // Optional filters
-                if (department) {
-                    pipeline.push({
-                        $match: { "courseDetails.department": department },
-                    });
-                }
-
+                // Optional search
                 if (search) {
                     pipeline.push({
                         $match: {
                             $or: [
                                 { "courseDetails.courseTitle": { $regex: search, $options: "i" } },
                                 { "courseDetails.courseCode": { $regex: search, $options: "i" } },
+                                { "teacherDetails.teacherName": { $regex: search, $options: "i" } },
                             ],
                         },
                     });
                 }
 
-                // Final output
+                // Final projection
                 pipeline.push({
                     $project: {
                         _id: 1,
@@ -883,9 +947,10 @@ async function run() {
                         teacherEmail: "$teacherDetails.teacherEmail",
                         teacherPhone: "$teacherDetails.teacherPhone",
                         designation: "$teacherDetails.designation",
-                        teacherDepartment: "$teacherDetails.department",
                         studentLimit: 1,
                         enrolledCount: 1,
+                        type: 1,
+                        currentStatus: 1, // enrolled/dropped/null
                         assignedAt: 1,
                     },
                 });
@@ -893,11 +958,13 @@ async function run() {
                 const offeredCourses = await assignedCoursesCollection.aggregate(pipeline).toArray();
 
                 res.status(200).json(offeredCourses);
-            } catch (error) {
-                console.error("Error fetching offered courses:", error);
+            } catch (err) {
+                console.error("Error fetching offered courses:", err);
                 res.status(500).json({ message: "Server error" });
             }
         });
+
+
 
 
 
