@@ -25,8 +25,17 @@ const RegisterStudent = ({ role, setRole }) => {
             ...Object.fromEntries(formData.entries()),
             hscRoll: Number(formData.get("hscRoll")),
             hscCGPA: Number(formData.get("hscCGPA")),
-
-        }
+            department: (() => {
+                switch (formData.get("enrollProgram")) {
+                    case "BSc in CSE": return "CSE";
+                    case "BSc in EEE": return "EEE";
+                    case "BBA": return "BBA";
+                    case "LLB": return "LLB";
+                    case "BA in English": return "English";
+                    default: return "Unknown";
+                }
+            })()
+        };
 
         console.log("Form Data:", userInfo);
 
@@ -165,10 +174,12 @@ const RegisterStudent = ({ role, setRole }) => {
                             <label className="label">Enroll Program</label>
                             <select name='enrollProgram' defaultValue="Select a Program" className="select w-full" required>
                                 <option disabled={true}>Select a Program</option>
-                                <option value={"BSC in CSE"} >BSC in CSE</option>
-                                <option value={"BSC in CSE"}>BSC in EEE</option>
-                                <option value={"BSC in ME"}>BSC in ME</option>
-                                <option value={"BSC in Textile"}>BSC in Textile</option>
+                                <option disabled={true}>Select a Program</option>
+                                <option value="BSc in CSE">BSc in CSE</option>
+                                <option value="BSc in EEE">BSc in EEE</option>
+                                <option value="BBA">Bachelor of Business Administration</option>
+                                <option value="LLB">Bachelor of Laws</option>
+                                <option value="BA in English">Bachelor of Arts in English</option>
                             </select>
                         </div>
 
