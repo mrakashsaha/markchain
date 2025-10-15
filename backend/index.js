@@ -307,6 +307,7 @@ const usersCollection = client.db("markChainDB").collection("users");
 const semestersCollection = client.db("markChainDB").collection("semesters");
 const coursesCollection = client.db("markChainDB").collection("courses");
 const assignedCoursesCollection = client.db("markChainDB").collection("assignedCourses");
+const enrollmentCollection = client.db("markChainDB").collection("enrollment");
 
 
 async function run() {
@@ -778,6 +779,123 @@ async function run() {
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ error: "Server Error" });
+            }
+        });
+
+
+
+
+        // Student Route============================
+        // Get / View offer coureses
+
+        app.get("/offer-courses", async (req, res) => {
+            try {
+                const { department, semester, search } = req.query;
+
+                const matchStage = { isOffered: true };
+                if (semester) matchStage.semesterCode = semester;
+
+                const pipeline = [
+                    { $match: matchStage },
+
+                    // Join with courses
+                    {
+                        $lookup: {
+                            from: "courses",
+                            localField: "courseCode",
+                            foreignField: "courseCode",
+                            as: "courseDetails",
+                        },
+                    },
+                    { $unwind: "$courseDetails" },
+
+                    // Join with semesters
+                    {
+                        $lookup: {
+                            from: "semesters",
+                            localField: "semesterCode",
+                            foreignField: "semesterCode",
+                            as: "semesterDetails",
+                        },
+                    },
+                    { $unwind: "$semesterDetails" },
+
+                    // Join with users (teacher info)
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "teacherWallet",
+                            foreignField: "walletAddress",
+                            as: "teacherDetails",
+                        },
+                    },
+                    { $unwind: "$teacherDetails" },
+
+                    // Join with enrollment collection to count enrolled students
+                    {
+                        $lookup: {
+                            from: "enrollment",
+                            localField: "_id",
+                            foreignField: "assignedCourseId",
+                            as: "enrolledStudents",
+                        },
+                    },
+
+                    // Add only enrolledCount
+                    {
+                        $addFields: {
+                            enrolledCount: { $size: "$enrolledStudents" },
+                        },
+                    },
+                ];
+
+                // Optional filters
+                if (department) {
+                    pipeline.push({
+                        $match: { "courseDetails.department": department },
+                    });
+                }
+
+                if (search) {
+                    pipeline.push({
+                        $match: {
+                            $or: [
+                                { "courseDetails.courseTitle": { $regex: search, $options: "i" } },
+                                { "courseDetails.courseCode": { $regex: search, $options: "i" } },
+                            ],
+                        },
+                    });
+                }
+
+                // Final output
+                pipeline.push({
+                    $project: {
+                        _id: 1,
+                        courseCode: 1,
+                        courseTitle: "$courseDetails.courseTitle",
+                        credit: "$courseDetails.credit",
+                        department: "$courseDetails.department",
+                        prerequisites: "$courseDetails.prerequisites",
+                        description: "$courseDetails.description",
+                        semesterName: "$semesterDetails.semesterName",
+                        semesterYear: "$semesterDetails.year",
+                        teacherName: "$teacherDetails.teacherName",
+                        teacherEmail: "$teacherDetails.teacherEmail",
+                        teacherPhone: "$teacherDetails.teacherPhone",
+                        designation: "$teacherDetails.designation",
+                        teacherDepartment: "$teacherDetails.department",
+                        studentLimit: 1,
+                        enrolledCount: 1,
+                        assignedAt: 1,
+                    },
+                });
+
+                const offeredCourses = await assignedCoursesCollection.aggregate(pipeline).toArray();
+
+                res.status(200).json(offeredCourses);
+            } catch (error) {
+                console.error("Error fetching offered courses:", error);
+                res.status(500).json({ message: "Server error" });
             }
         });
 
