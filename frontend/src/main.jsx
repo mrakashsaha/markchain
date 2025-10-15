@@ -18,6 +18,7 @@ import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
 import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
 import EnrollCourses from './pages/Dashboard/student.jsx/EnrollCourses.jsx';
 
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -82,7 +83,7 @@ const router = createBrowserRouter([
       },
       {
         path: "student/my-course",
-        element: <h2>My Courses</h2>,
+        element: <h2>My Enrolled Courses</h2>,
       },
       {
         path: "student/enroll-courses",
