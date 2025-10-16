@@ -1592,6 +1592,121 @@ async function run() {
             }
         });
 
+        // admin stats for dashboard (Shofiq)
+        app.get('/user-counts', async (req, res) => {
+            try {
+                const totalUsers = await User.countDocuments();
+                const totalStudents = await User.countDocuments({ role: 'student' });
+                const totalTeachers = await User.countDocuments({ role: 'teacher' });
+                const pendingApprovals = await User.countDocuments({ isApproved: false });
+                const approvedStudents = await User.countDocuments({
+                    role: 'student',
+                    isApproved: true
+                });
+                const approvedTeachers = await User.countDocuments({
+                    role: 'teacher',
+                    isApproved: true
+                });
+
+                res.json({
+                    success: true,
+                    counts: {
+                        totalUsers,
+                        totalStudents,
+                        totalTeachers,
+                        pendingApprovals,
+                        approvedStudents,
+                        approvedTeachers
+                    }
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
+        // Backend route for approving accounts
+        app.post('/admin/approve-account', async (req, res) => {
+            try {
+                const { accountId, walletAddress, approvedBy } = req.body;
+                console.log('Approve account request:', { accountId, walletAddress, approvedBy });
+                // Find and update the user
+                const updatedUser = await User.findByIdAndUpdate(
+                    accountId,
+                    {
+                        isApproved: true,
+                        status: 'approved',
+                        approvedAt: new Date(),
+                        approvedBy
+                    },
+                    { new: true }
+                );
+                if (!updatedUser) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'User not found'
+                    });
+                }
+                console.log('Account approved successfully:', updatedUser.email);
+                res.json({
+                    success: true,
+                    message: 'Account approved successfully',
+                    user: updatedUser
+                });
+            } catch (error) {
+                console.error('Error in approve-account:', error);
+                res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
+        // Backend route for rejecting accounts
+        app.post('/admin/reject-account', async (req, res) => {
+            try {
+                const { accountId, walletAddress, rejectedBy } = req.body;
+
+                console.log('Reject account request:', { accountId, walletAddress, rejectedBy });
+
+                // Find and update the user
+                const updatedUser = await User.findByIdAndUpdate(
+                    accountId,
+                    {
+                        isApproved: false,
+                        status: 'rejected',
+                        rejectedAt: new Date(),
+                        rejectedBy
+                    },
+                    { new: true }
+                );
+
+                if (!updatedUser) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'User not found'
+                    });
+                }
+
+                console.log('Account rejected successfully:', updatedUser.email);
+
+                res.json({
+                    success: true,
+                    message: 'Account rejected successfully',
+                    user: updatedUser
+                });
+
+            } catch (error) {
+                console.error('Error in reject-account:', error);
+                res.status(500).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
 
 
 
