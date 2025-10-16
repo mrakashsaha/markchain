@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { FaCheckCircle, FaTimesCircle, FaSearch, FaBook } from "react-icons/fa";
+import { IoMdRefresh } from "react-icons/io";
 import { nodeBackend } from "../../../axios/axiosInstance";
 import LoadingSpiner from "../../../components/LoadingSpiner";
 import CustomToast from "../../../Toast/CustomToast";
@@ -10,7 +11,13 @@ const EnrollCourses = () => {
   const { userInfo } = useContext(AuthContext);
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 triggers fetch only when Enter or button pressed
   const [loading, setLoading] = useState(false);
+
+
+  useEffect(() => {
+    fetchCourses();
+  }, [searchQuery, userInfo])
 
   // ✅ Fetch offered courses for current student
   const fetchCourses = async () => {
@@ -19,7 +26,7 @@ const EnrollCourses = () => {
     try {
       const params = new URLSearchParams({
         studentWallet: userInfo.walletAddress,
-        search: searchTerm,
+        search: searchQuery,
       });
 
       const res = await nodeBackend.get(`/offer-courses?${params.toString()}`);
@@ -32,9 +39,17 @@ const EnrollCourses = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCourses();
-  }, [searchTerm]);
+  // ✅ Press Enter to search
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearchQuery(searchTerm.trim());
+    }
+  };
+
+  // ✅ Search button click
+  const handleSearchClick = () => {
+    setSearchQuery(searchTerm.trim());
+  };
 
   // ✅ Enroll handler
   const handleEnroll = async (course) => {
@@ -49,14 +64,19 @@ const EnrollCourses = () => {
 
       if (!confirm.isConfirmed) return;
 
-      const res = await nodeBackend.post("/enrollment", {
-        studentWallet: userInfo.walletAddress,
+      const enrollmentData = {
         assignedCourseId: course._id,
+        studentWallet: userInfo.walletAddress,
+        teacherWallet: course.teacherWallet,
         courseCode: course.courseCode,
-        semesterName: course.semesterName,
-        semesterYear: course.semesterYear,
+        semesterCode: course.semesterCode,
         type: course.type,
-      });
+        isCompleted: false,
+      }
+
+      console.log(enrollmentData);
+
+      const res = await nodeBackend.post("/enroll", { enrollmentData });
 
       if (res.data.insertedId) {
         CustomToast({ icon: "success", title: "Enrolled successfully!" });
@@ -85,7 +105,7 @@ const EnrollCourses = () => {
       if (!confirm.isConfirmed) return;
 
       const res = await nodeBackend.delete(
-        `/enrollment?studentWallet=${userInfo.walletAddress}&assignedCourseId=${course._id}`
+        `/enroll?studentWallet=${userInfo.walletAddress}&assignedCourseId=${course._id}`
       );
 
       if (res.data.deletedCount > 0) {
@@ -98,8 +118,8 @@ const EnrollCourses = () => {
     }
   };
 
-  if (loading) return <LoadingSpiner />;
 
+  if (loading) return <LoadingSpiner />;
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-6 py-10">
       <div className="max-w-6xl mx-auto">
@@ -109,15 +129,25 @@ const EnrollCourses = () => {
             <FaBook /> Enroll Courses
           </h1>
 
-          <div className="relative w-full md:w-1/3">
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by course or teacher..."
-              className="input input-bordered bg-base-300 text-gray-200 pl-10 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* ✅ Search Box + Button */}
+          <div className="flex items-center gap-2 w-full md:w-1/3">
+            <div className="relative flex-grow">
+              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by course or teacher..."
+                className="input input-bordered bg-base-300 text-gray-200 pl-10 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleKeyDown} // 🔍 triggers only on Enter
+              />
+            </div>
+            <button
+              onClick={handleSearchClick}
+              className="btn btn-primary flex items-center gap-1"
+            >
+              <FaSearch /> Search
+            </button>
           </div>
         </div>
 
@@ -132,6 +162,7 @@ const EnrollCourses = () => {
                 <th>Credit</th>
                 <th>Teacher</th>
                 <th>Type</th>
+                <th>Semester</th>
                 <th>Seats</th>
                 <th>Action</th>
               </tr>
@@ -153,32 +184,41 @@ const EnrollCourses = () => {
                     <td>{course.teacherName}</td>
                     <td>
                       <span
-                        className={`badge ${
-                          course.type === "retake"
-                            ? "badge-warning"
-                            : "badge-success"
-                        }`}
+                        className={`badge ${course.type === "retake"
+                          ? "badge-warning"
+                          : "badge-success"
+                          }`}
                       >
                         {course.type}
                       </span>
                     </td>
+                    <td>{course.semesterName} {course.semesterYear}</td>
                     <td>
                       {course.enrolledCount}/{course.studentLimit}
                     </td>
                     <td>
-                      {course.currentStatus === "enrolled" ? (
+                      {course.isEnrolled === true ? (
                         <button
                           onClick={() => handleDrop(course)}
-                          className="btn btn-sm btn-error flex items-center gap-1"
+                          className="btn btn-sm px-5 btn-error flex items-center gap-1"
                         >
                           <FaTimesCircle /> Drop
                         </button>
                       ) : (
-                        <button
+                        <button disabled={course.enrolledCount === course.studentLimit}
                           onClick={() => handleEnroll(course)}
-                          className="btn btn-sm btn-primary flex items-center gap-1"
+                          className={`btn btn-sm flex items-center gap-2 ${course.type === "retake" ? "btn-warning" : "btn-primary"
+                            }`}
                         >
-                          <FaCheckCircle /> Enroll
+                          {course.type === "retake" ? (
+                            <>
+                              <IoMdRefresh className="text-lg" /> Retake
+                            </>
+                          ) : (
+                            <>
+                              <FaCheckCircle className="text-lg" /> Enroll
+                            </>
+                          )}
                         </button>
                       )}
                     </td>
