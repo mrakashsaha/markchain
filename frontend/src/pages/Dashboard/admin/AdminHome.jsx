@@ -293,7 +293,7 @@ const AdminHome = () => {
                                                             {account.studentName || account.teacherName}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
-                                                            {account.phone || 'No phone'}
+                                                            {account.teacherPhone || account.studentPhone || 'No phone'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -311,7 +311,7 @@ const AdminHome = () => {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="truncate max-w-xs">{account.email}</td>
+                                            <td className="truncate max-w-xs">{account.teacherEmail ||account.studentEmail || 'N/A'}</td>
                                             <td>
                                                 {moment(account.createdAt).format("MMM Do YYYY")}
                                             </td>
