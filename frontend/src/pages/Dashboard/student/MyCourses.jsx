@@ -11,23 +11,27 @@ const MyCourses = () => {
   const [myCourses, setMyCourses] = useState([]);
   const [semesters, setSemesters] = useState([]);
 
-  // Filters
-  const [semesterFilter, setSemesterFilter] = useState("all"); // all | running | upcoming | completed | <semesterCode>
+  // Filter only by semesterCode
+  const [semesterFilter, setSemesterFilter] = useState("all"); // "all" or specific semesterCode
 
-  // Search UX like EnrollCourses: input + "apply" trigger
+  // Search input + applied query (Enter/button applies)
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchQuery, setSearchQuery] = useState(""); // used for API
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [loading, setLoading] = useState(false);
 
-  // Fetch semesters once and default to running if available
+  // Fetch semesters once; hide upcoming and preselect running semesterCode
   useEffect(() => {
     const fetchSemesters = async () => {
       try {
         const { data } = await nodeBackend.get("/semesters");
-        setSemesters(data || []);
-        const running = (data || []).find((s) => s.status === "running");
-        if (running) setSemesterFilter("running");
+        const available = (data || []).filter((s) => s.status !== "upcoming");
+        setSemesters(available);
+
+        const running = available.find((s) => s.status === "running");
+        const defaultCode =
+          running?.semesterCode || available[0]?.semesterCode || "all";
+        setSemesterFilter(defaultCode);
       } catch (e) {
         console.error(e);
         CustomToast({ icon: "error", title: "Failed to load semesters" });
@@ -36,34 +40,36 @@ const MyCourses = () => {
     fetchSemesters();
   }, []);
 
-  // Fetch my courses when wallet is ready and filters/search change
+  // Fetch my courses
   useEffect(() => {
+    const fetchMyCourses = async () => {
+      if (!userInfo?.walletAddress) return;
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          studentWallet: userInfo.walletAddress,
+        });
+
+        if (searchQuery) params.append("search", searchQuery);
+        // Only pass semester when it's a real code
+        if (semesterFilter && semesterFilter !== "all") {
+          params.append("semester", semesterFilter);
+        }
+
+        const res = await nodeBackend.get(`/my-courses?${params.toString()}`);
+        setMyCourses(res.data || []);
+      } catch (e) {
+        console.error(e);
+        CustomToast({ icon: "error", title: "Failed to load courses" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchMyCourses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo, searchQuery, semesterFilter]);
 
-  const fetchMyCourses = async () => {
-    if (!userInfo?.walletAddress) return; // wait for AuthContext to provide wallet
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        studentWallet: userInfo.walletAddress,
-      });
-
-      if (searchQuery) params.append("search", searchQuery);
-      if (semesterFilter !== "all") params.append("semester", semesterFilter);
-
-      const res = await nodeBackend.get(`/my-courses?${params.toString()}`);
-      setMyCourses(res.data || []);
-    } catch (e) {
-      console.error(e);
-      CustomToast({ icon: "error", title: "Failed to load courses" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Search handlers (Enter to search + button)
+  // Search handlers (Enter or button to apply)
   const handleKeyDown = (e) => {
     if (e.key === "Enter") setSearchQuery(searchTerm.trim());
   };
@@ -76,25 +82,26 @@ const MyCourses = () => {
   const semesterLabel = (c) =>
     c?.semesterName ? `${c.semesterName} ${c.semesterYear}` : c?.semesterCode || "-";
 
-  if (!userInfo?.walletAddress || loading) return <LoadingSpiner />;
+
+  if (loading || !userInfo?.walletAddress) return <LoadingSpiner />;
 
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-6 py-10">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+        {/* Header + Controls (Search + Filter + Refresh) */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
             <FaBook /> My Courses
           </h1>
 
-          {/* Search box + actions */}
-          <div className="flex items-center gap-2 w-full md:w-1/2">
-            <div className="relative flex-grow">
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-stretch">
+            {/* Search input + apply/clear */}
+            <div className="relative flex-1 md:w-96">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by course or teacher..."
-                className="input input-bordered bg-base-300 text-gray-200 pl-10 w-full"
+                className="input input-bordered bg-base-300 text-gray-200 pl-10 w-full h-12"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -102,7 +109,7 @@ const MyCourses = () => {
               {searchTerm && (
                 <button
                   onClick={handleResetSearch}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
                   aria-label="Clear search"
                 >
                   <FaTimes />
@@ -110,30 +117,28 @@ const MyCourses = () => {
               )}
             </div>
 
-            <button onClick={handleSearchClick} className="btn btn-primary">
+            <button onClick={handleSearchClick} className="btn btn-primary h-12">
               <FaSearch /> Search
             </button>
 
-            <button onClick={fetchMyCourses} className="btn btn-neutral">
+            {/* Semester filter (codes only, no upcoming) */}
+            <select
+              value={semesterFilter}
+              onChange={(e) => setSemesterFilter(e.target.value)}
+              className="select select-bordered bg-base-300 text-gray-200 h-12 md:w-64"
+            >
+              <option value="all">All Semesters</option>
+              {semesters.map((s) => (
+                <option key={s._id} value={s.semesterCode}>
+                  {s.semesterName} {s.year} {s.status === "running" ? "(Current)" : ""}
+                </option>
+              ))}
+            </select>
+
+            <button onClick={() => setSearchQuery(searchTerm.trim())} className="btn btn-neutral h-12">
               <IoMdRefresh /> Refresh
             </button>
           </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row items-center gap-3 mb-6">
-          <select
-            value={semesterFilter}
-            onChange={(e) => setSemesterFilter(e.target.value)}
-            className="select select-bordered bg-base-300 text-gray-200 w-full md:w-64"
-          >
-            <option value="all">All</option>
-            {semesters.map((s) => (
-              <option key={s._id} value={s.semesterCode}>
-                {s.semesterName} {s.year} {s.status === "running" && "(Current)"}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Table */}
@@ -155,7 +160,7 @@ const MyCourses = () => {
               {myCourses.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="text-center py-6">
-                    No courses found. Try changing filters or search.
+                    No courses found. Try changing the semester or search.
                   </td>
                 </tr>
               ) : (
@@ -166,26 +171,9 @@ const MyCourses = () => {
                     <td>{c.courseTitle}</td>
                     <td>{c.credit}</td>
                     <td>{c.teacherName || "-"}</td>
+                    <td>{semesterLabel(c)}</td>
                     <td>
-                      <div className="flex items-center gap-2">
-                        <span>{semesterLabel(c)}</span>
-                        {c.semesterStatus === "running" && (
-                          <span className="badge badge-success badge-soft">Running</span>
-                        )}
-                        {c.semesterStatus === "upcoming" && (
-                          <span className="badge badge-info badge-soft">Upcoming</span>
-                        )}
-                        {c.semesterStatus === "completed" && (
-                          <span className="badge badge-neutral badge-soft">Completed</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      {c.type === "retake" ? (
-                        <span className="badge badge-warning badge-soft">Retake</span>
-                      ) : (
-                        <span className="badge badge-primary badge-soft">Regular</span>
-                      )}
+                      {c.type === "retake" ? "Retake":"Regular"}
                     </td>
                     <td>
                       {c.isCompleted ? (
@@ -199,10 +187,6 @@ const MyCourses = () => {
               )}
             </tbody>
           </table>
-        </div>
-
-        <div className="mt-4 text-sm text-gray-400">
-          Showing {myCourses.length} course{myCourses.length !== 1 ? "s" : ""}.
         </div>
       </div>
     </div>

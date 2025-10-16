@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { nodeBackend } from "../../../axios/axiosInstance";
 import LoadingSpiner from "../../../components/LoadingSpiner";
@@ -7,39 +7,49 @@ import Swal from "sweetalert2";
 
 const ManageAssignedCourses = () => {
   const [assignedCourses, setAssignedCourses] = useState([]);
+
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [semesterFilter, setSemesterFilter] = useState("all");
+
   const [showModal, setShowModal] = useState(false);
   const [offerModal, setOfferModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [studentLimit, setStudentLimit] = useState("");
 
-  const [loading, setLoading] = useState(false);
+  // Split loading: init vs table fetch
+  const [initLoading, setInitLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+
   const [courses, setCourses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [semesters, setSemesters] = useState([]);
 
-  // ✅ Fetch assigned courses with filters
+  // Ensure we auto-select running semester only once
+  const didAutoselectSemester = useRef(false);
+
+  // Fetch assigned courses with filters
   const fetchAssignedCourses = async () => {
-    setLoading(true);
+    setTableLoading(true);
     try {
       const params = new URLSearchParams();
       if (departmentFilter !== "all") params.append("department", departmentFilter);
-      if (semesterFilter !== "all") params.append("semesterCode", semesterFilter);
-
+      if (semesterFilter !== "all" && semesterFilter) {
+        params.append("semesterCode", semesterFilter);
+      }
       const res = await nodeBackend.get(`/assignedCourses?${params.toString()}`);
-      setAssignedCourses(res.data);
+      setAssignedCourses(res.data || []);
     } catch (error) {
       console.error(error);
+      CustomToast({ icon: "error", title: "Failed to load assigned courses" });
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
   };
 
-  // ✅ Fetch all dependencies once and auto-select running semester
+  // Fetch dependencies once; then autoselect current running semester
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      setInitLoading(true);
       try {
         const [coursesRes, teachersRes, semestersRes] = await Promise.all([
           nodeBackend.get("/courses"),
@@ -47,29 +57,38 @@ const ManageAssignedCourses = () => {
           nodeBackend.get("/semesters"),
         ]);
 
-        setCourses(coursesRes.data);
-        setTeachers(teachersRes.data);
-        setSemesters(semestersRes.data);
+        const semList = semestersRes.data || [];
+        setCourses(coursesRes.data || []);
+        setTeachers(teachersRes.data || []);
+        setSemesters(semList);
 
-        const currentSemester = semestersRes.data.find((s) => s.status === "running");
-        if (currentSemester) {
-          setSemesterFilter(currentSemester.semesterCode);
+        // Auto-select running semester only once
+        if (!didAutoselectSemester.current) {
+          const current = semList.find((s) => s.status === "running");
+          if (current?.semesterCode) {
+            setSemesterFilter(current.semesterCode);
+          }
+          didAutoselectSemester.current = true;
         }
       } catch (error) {
         console.error(error);
+        CustomToast({ icon: "error", title: "Failed to load dependencies" });
       } finally {
-        setLoading(false);
+        setInitLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  // ✅ Refetch when filters change
+  // Refetch table when filters change, only after init done
   useEffect(() => {
-    fetchAssignedCourses();
-  }, [departmentFilter, semesterFilter]);
+    if (!initLoading) {
+      fetchAssignedCourses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departmentFilter, semesterFilter, initLoading]);
 
-  // ✅ Assign Course Submit Handler
+  // Assign Course Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
@@ -92,7 +111,7 @@ const ManageAssignedCourses = () => {
       });
   };
 
-  // ✅ Delete Assigned Course
+  // Delete Assigned Course
   const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
@@ -119,7 +138,7 @@ const ManageAssignedCourses = () => {
     });
   };
 
-  // ✅ Offer or Close Course
+  // Offer or Close Course
   const handleOffer = async (courseId, isOffered, limit = null) => {
     try {
       const payload = { isOffered };
@@ -128,9 +147,7 @@ const ManageAssignedCourses = () => {
       await nodeBackend.patch(`/assignedCourses?id=${courseId}`, payload);
       CustomToast({
         icon: "success",
-        title: isOffered
-          ? "Course offered successfully!"
-          : "Course closed successfully!",
+        title: isOffered ? "Course offered successfully!" : "Course closed successfully!",
       });
       fetchAssignedCourses();
       setOfferModal(false);
@@ -142,14 +159,14 @@ const ManageAssignedCourses = () => {
     }
   };
 
-  // ✅ Handle Offer Modal Open
+  // Offer Modal Open
   const openOfferModal = (course) => {
     setSelectedCourse(course);
     setStudentLimit(course.studentLimit || ""); // prefill previous value
     setOfferModal(true);
   };
 
-  if (loading) return <LoadingSpiner />;
+  if (initLoading) return <LoadingSpiner />;
 
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-6 py-10">
@@ -181,7 +198,7 @@ const ManageAssignedCourses = () => {
           <select
             value={semesterFilter}
             onChange={(e) => setSemesterFilter(e.target.value)}
-            className="select select-bordered bg-base-300 text-gray-200 w-full md:w-48"
+            className="select select-bordered bg-base-300 text-gray-200 w-full md:w-64"
           >
             <option value="all">All Semesters</option>
             {semesters.map((s) => (
@@ -209,7 +226,13 @@ const ManageAssignedCourses = () => {
               </tr>
             </thead>
             <tbody>
-              {assignedCourses.length === 0 ? (
+              {tableLoading ? (
+                <tr>
+                  <td colSpan="9" className="py-6 text-center">
+                    <span className="loading loading-spinner loading-md" />
+                  </td>
+                </tr>
+              ) : assignedCourses.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center py-4">
                     No assigned courses found.
@@ -229,7 +252,7 @@ const ManageAssignedCourses = () => {
                     <td>
                       {a.isOffered ? (
                         <span className="badge badge-success badge-soft">
-                          Offered ({a.studentLimit})
+                          Offered {a.studentLimit ? `(${a.studentLimit})` : ""}
                         </span>
                       ) : (
                         <span className="badge badge-warning badge-soft">
@@ -269,7 +292,7 @@ const ManageAssignedCourses = () => {
           </table>
         </div>
 
-        {/* ✅ Offer Modal */}
+        {/* Offer Modal */}
         {offerModal && (
           <dialog open className="modal">
             <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
@@ -283,24 +306,20 @@ const ManageAssignedCourses = () => {
                   value={studentLimit}
                   onChange={(e) => setStudentLimit(e.target.value)}
                   type="number"
+                  min={1}
                   className="input w-full"
                   placeholder="Enter student limit"
                 />
               </div>
 
               <div className="modal-action">
-                <button
-                  onClick={() => setOfferModal(false)}
-                  className="btn btn-sm btn-outline"
-                >
+                <button onClick={() => setOfferModal(false)} className="btn btn-sm btn-outline">
                   Cancel
                 </button>
                 <button
-                  onClick={() =>
-                    handleOffer(selectedCourse._id, true, studentLimit)
-                  }
+                  onClick={() => handleOffer(selectedCourse._id, true, studentLimit)}
                   className="btn btn-sm btn-primary"
-                  disabled={!studentLimit}
+                  disabled={!studentLimit || Number(studentLimit) <= 0}
                 >
                   Confirm Offer
                 </button>
@@ -309,7 +328,7 @@ const ManageAssignedCourses = () => {
           </dialog>
         )}
 
-        {/* Assign Modal (unchanged) */}
+        {/* Assign Modal */}
         {showModal && (
           <div className={`modal ${showModal ? "modal-open" : ""}`}>
             <div className="modal-box bg-base-100 text-gray-200 rounded-2xl">
@@ -357,8 +376,7 @@ const ManageAssignedCourses = () => {
                   <option value="">Select Semester</option>
                   {semesters.map((s) => (
                     <option key={s._id} value={s.semesterCode}>
-                      {s.semesterName} {s.year}{" "}
-                      {s.status === "running" && "(Current)"}
+                      {s.semesterName} {s.year} {s.status === "running" && "(Current)"}
                     </option>
                   ))}
                 </select>
