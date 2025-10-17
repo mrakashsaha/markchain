@@ -10,10 +10,6 @@ const ContinueWithMetaMask = () => {
     const navigate = useNavigate();
     const { account, loading, connectWallet} = useContext(AuthContext);
 
-
-    console.log(loading)
-    console.log(account)
-
     if (loading) {
         return <LoadingSpiner></LoadingSpiner>
 
