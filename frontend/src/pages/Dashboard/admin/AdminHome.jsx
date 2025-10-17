@@ -201,7 +201,11 @@ const AdminHome = () => {
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
                     <p className="text-gray-300 mt-2">
-                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}
+                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}!
+                    </p>
+                    <p className="text-gray-400">
+                        <FaWallet className="inline-block mr-2" /> 
+                        {userInfo?.walletAddress ? formatWalletAddress(userInfo.walletAddress) : 'N/A'}
                     </p>
                 </div>
 
