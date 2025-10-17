@@ -24,12 +24,7 @@ const PrivateRoute = ({ children }) => {
       if (userInfo.status === "pending") {
         return <Navigate to="/pending" replace />;
       } else if (userInfo.status === "approved") {
-        if (userInfo.publicKey === null) {
-          return <Navigate to="/private-key" replace />;
-        }
-        else {
-          return <Navigate to="/dashboard" replace />;
-        }
+        return <Navigate to="/dashboard" replace />;
       }
       else {
         return <Navigate to="/reject" replace />;
@@ -43,7 +38,6 @@ const PrivateRoute = ({ children }) => {
     if (!userInfo) {
       return <Navigate to="/register" replace />;
     }
-
     if (userInfo.status === "approved") {
       return <Navigate to="/dashboard" replace />;
     }
@@ -51,6 +45,7 @@ const PrivateRoute = ({ children }) => {
     if (userInfo.status === "rejected") {
       return <Navigate to="/reject" replace />;
     }
+
   }
 
   // ✅ Default: allow access

@@ -7,6 +7,8 @@ import moment from 'moment';
 const RejectedAccount = () => {
     const { userInfo, loading } = useContext(AuthContext);
 
+    console.log(userInfo)
+
     if (loading) {
         return <LoadingSpiner />;
     }
