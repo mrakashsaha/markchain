@@ -4,9 +4,10 @@ import CustomToast from "../Toast/CustomToast";
 import { FaCopy, FaDownload, FaKey, FaEye, FaEyeSlash, FaInfoCircle, FaSave } from "react-icons/fa";
 import { nodeBackend } from "../axios/axiosInstance";
 import { Navigate, useNavigate } from "react-router-dom";
+import LoadingSpiner from "./LoadingSpiner";
 
 const RequestPrivateKey = () => {
-    const { userInfo, refreshUserInfo } = useContext(AuthContext);
+    const { userInfo, refreshUserInfo, loading } = useContext(AuthContext);
     const walletAddress = userInfo?.walletAddress || "";
 
     const [generated, setGenerated] = useState(false);
@@ -16,6 +17,14 @@ const RequestPrivateKey = () => {
     const [showPriv, setShowPriv] = useState(true);
     const [copied, setCopied] = useState({ priv: false, pub: false });
     const navigate = useNavigate();
+
+    if (loading || !userInfo) return <LoadingSpiner></LoadingSpiner>
+
+    if (userInfo?.publicKey) {
+        if (userInfo?.role === "admin") return <Navigate to="/dashboard/admin/home"></Navigate>
+        if (userInfo?.role === "student") return <Navigate to="/dashboard/student/home"></Navigate>
+        if (userInfo?.role === "teacher") return <Navigate to="/dashboard/teacher/home"></Navigate>
+    }
 
     const handleRequestClick = () => {
         console.log("this button hited"); // your logic will go here later
@@ -74,8 +83,20 @@ const RequestPrivateKey = () => {
                 if (res.data.modifiedCount) {
                     refreshUserInfo();
                     CustomToast({ icon: "success", title: "Public key Stored Sucessfully" });
-                    navigate("/");
-                    
+                    if (userInfo?.role === "admin") {
+                        navigate("/dashboard/admin/home");
+                    }
+
+                    else if (userInfo?.role === "student") {
+                        navigate("/dashboard/student/home")
+                    }
+                    else if (userInfo?.role === "teacher") {
+                        navigate("/dashboard/teacher/home")
+                    }
+                    else {
+                        navigate("/dashboard")
+                    }
+
                 }
 
                 else if (res.data.modifiedCount === 0 && res.data.matchedCount === 1) {
@@ -93,7 +114,7 @@ const RequestPrivateKey = () => {
             })
     };
 
-    if (userInfo?.publicKey) return <Navigate to={"/dashboard"}></Navigate>
+
 
     return (
         <div className="min-h-screen bg-base-200 text-base-content mt-12 px-4 md:px-6 py-8">

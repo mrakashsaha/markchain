@@ -61,7 +61,7 @@ const RegisterStudent = ({ role, setRole }) => {
                         title: "Your information has been submitted successfully."
                     });
 
-                    navigate("/");
+                    navigate("/pending");
 
                 }
 
