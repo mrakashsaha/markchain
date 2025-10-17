@@ -1,62 +1,56 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Swal from 'sweetalert2';
-import { FaUser, FaEnvelope, FaClock, FaCheck, FaTimes, FaEye, FaWallet, FaBan, FaUsers } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaClock, FaCheck, FaTimes, FaEye, FaWallet, FaBan, FaUsers, FaUserGraduate, FaChalkboardTeacher } from 'react-icons/fa';
 import { SiSemanticweb } from 'react-icons/si';
 import moment from 'moment';
 import { AuthContext } from './../../../contextAPI/AuthContext';
 
 const AdminHome = () => {
     const { userInfo, nodeBackend } = useContext(AuthContext);
-    const [totalUsers, setTotalUsers] = useState([]);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalStudents: 0,
+        totalTeachers: 0,
+        pendingApprovals: 0
+    });
     const [pendingAccounts, setPendingAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    console.log(pendingAccounts);
 
-    // Fetch total users from your backend API
-    useEffect(() => {
-        const fetchTotalUsers = async () => {
-            try {
-                const response = await fetch('dashboard/admin/total-users');
-                if (response.ok) {
-                    const data = await response.json();
-                    setTotalUsers(data.users);
-                } else {
-                    throw new Error(response.data.message);
-                }
-            } catch (error) {
-                console.error("Error fetching total users:", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to load total users'
-                });
-            }
-        };
-
-        fetchTotalUsers();
-    }, []);
-
-    // Fetch pending accounts from your backend API
-    const fetchPendingAccounts = async () => {
+    // Fetch all statistics from backend
+    const fetchDashboardStats = async () => {
         try {
             setLoading(true);
-            const response = await fetch('dashboard/admin/pending-accounts');
+            const response = await fetch('http://localhost:5000/system-users');
 
             if (response.ok) {
-                const data = await response.json();
-                setPendingAccounts(data.pendingAccounts);
+                const allUsers = await response.json();
+
+                // Calculate counts from the user data
+                const totalUsers = allUsers.length;
+                const totalStudents = allUsers.filter(user => user.role === 'student').length;
+                const totalTeachers = allUsers.filter(user => user.role === 'teacher').length;
+                const pendingApprovals = allUsers.filter(user => !user.isApproved).length;
+                const approvedStudents = allUsers.filter(user => user.role === 'student' && user.isApproved).length;
+                const approvedTeachers = allUsers.filter(user => user.role === 'teacher' && user.isApproved).length;
+
+                setStats({
+                    totalUsers,
+                    totalStudents,        // All students (approved + pending)
+                    totalTeachers,        // All teachers (approved + pending)
+                    pendingApprovals,
+                    approvedStudents,     // Only approved students
+                    approvedTeachers      // Only approved teachers
+                });
+
+                // Set pending accounts for the table
+                setPendingAccounts(allUsers.filter(user => !user.isApproved));
             } else {
-                throw new Error(response.data.message);
+                throw new Error('Failed to fetch users data');
             }
         } catch (error) {
-            console.error("Error fetching pending accounts:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to load pending accounts'
-            });
+            console.error("Error fetching dashboard stats:", error);
         } finally {
             setLoading(false);
         }
@@ -64,12 +58,12 @@ const AdminHome = () => {
 
     useEffect(() => {
         if (userInfo?.role === 'admin') {
-            fetchPendingAccounts();
+            fetchDashboardStats();
         }
     }, [userInfo]);
 
     // Approve account
-    const approveAccount = async (accountId, walletAddress) => {
+    const approveAccount = async (accountId, walletAddress, role) => {
         try {
             const result = await Swal.fire({
                 title: 'Approve Account?',
@@ -89,7 +83,15 @@ const AdminHome = () => {
                 });
 
                 if (response.data.success) {
+                    // Update local state
                     setPendingAccounts(prev => prev.filter(account => account._id !== accountId));
+                    setStats(prev => ({
+                        ...prev,
+                        pendingApprovals: prev.pendingApprovals - 1,
+                        // Increment the appropriate role count
+                        totalStudents: role === 'student' ? prev.totalStudents + 1 : prev.totalStudents,
+                        totalTeachers: role === 'teacher' ? prev.totalTeachers + 1 : prev.totalTeachers
+                    }));
 
                     Swal.fire({
                         icon: 'success',
@@ -132,7 +134,12 @@ const AdminHome = () => {
                 });
 
                 if (response.data.success) {
+                    // Update local state
                     setPendingAccounts(prev => prev.filter(account => account._id !== accountId));
+                    setStats(prev => ({
+                        ...prev,
+                        pendingApprovals: prev.pendingApprovals - 1
+                    }));
 
                     Swal.fire({
                         icon: 'success',
@@ -194,65 +201,54 @@ const AdminHome = () => {
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
                     <p className="text-gray-300 mt-2">
-                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}
+                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}!
                     </p>
-                    {/* <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                        <FaWallet className="text-xs" />
-                        <span className="font-mono">{userInfo?.walletAddress?.slice(0, 8)}...{userInfo?.walletAddress?.slice(-6)}</span>
-                    </div> */}
+                    <p className="text-gray-400">
+                        <FaWallet className="inline-block mr-2" /> 
+                        {userInfo?.walletAddress ? formatWalletAddress(userInfo.walletAddress) : 'N/A'}
+                    </p>
                 </div>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     {/* Total Users Card */}
-                    <div className="stat bg-base-100 rounded-lg shadow">
+                    <div className="stat bg-base-100 rounded-lg shadow border-l-4 border-blue-500">
                         <div className="stat-figure text-blue-500">
                             <FaUsers className="text-3xl" />
                         </div>
                         <div className="stat-title">Total Users</div>
-                        <div className="stat-value text-blue-600">{totalUsers.length}</div>
+                        <div className="stat-value text-blue-600">{stats.totalUsers}</div>
                         <div className="stat-desc">All platform users</div>
                     </div>
-                    <div className="stat bg-base-100 rounded-lg shadow">
-                        <div className="stat-figure text-primary">
-                            <FaUser className="text-3xl" />
+
+                    {/* Pending Approvals Card */}
+                    <div className="stat bg-base-100 rounded-lg shadow border-l-4 border-orange-500">
+                        <div className="stat-figure text-orange-500">
+                            <FaClock className="text-3xl" />
                         </div>
-                        <div className="stat-title">Total Pending</div>
-                        <div className="stat-value text-primary">{pendingAccounts.length}</div>
+                        <div className="stat-title">Pending</div>
+                        <div className="stat-value text-orange-600">{stats.pendingApprovals}</div>
                         <div className="stat-desc">Awaiting approval</div>
                     </div>
 
-                    <div className="stat bg-base-100 rounded-lg shadow">
-                        <div className="stat-figure text-secondary">
-                            <FaUser className="text-3xl" />
+                    {/* Students Card */}
+                    <div className="stat bg-base-100 rounded-lg shadow border-l-4 border-green-500">
+                        <div className="stat-figure text-green-500">
+                            <FaUserGraduate className="text-3xl" />
                         </div>
                         <div className="stat-title">Students</div>
-                        <div className="stat-value text-secondary">
-                            {pendingAccounts.filter(acc => acc.role === 'student').length}
-                        </div>
-                        <div className="stat-desc">Pending students</div>
+                        <div className="stat-value text-green-600">{stats.totalStudents}</div>
+                        <div className="stat-desc">Approved students</div>
                     </div>
 
-                    <div className="stat bg-base-100 rounded-lg shadow">
-                        <div className="stat-figure text-accent">
-                            <FaUser className="text-3xl" />
+                    {/* Teachers Card */}
+                    <div className="stat bg-base-100 rounded-lg shadow border-l-4 border-purple-500">
+                        <div className="stat-figure text-purple-500">
+                            <FaChalkboardTeacher className="text-3xl" />
                         </div>
                         <div className="stat-title">Teachers</div>
-                        <div className="stat-value text-accent">
-                            {pendingAccounts.filter(acc => acc.role === 'teacher').length}
-                        </div>
-                        <div className="stat-desc">Pending teachers</div>
-                    </div>
-
-                    <div className="stat bg-base-100 rounded-lg shadow">
-                        <div className="stat-figure text-info">
-                            <FaWallet className="text-3xl" />
-                        </div>
-                        <div className="stat-title">Your Wallet</div>
-                        <div className="stat-value text-info text-lg">
-                            {formatWalletAddress(userInfo?.walletAddress)}
-                        </div>
-                        <div className="stat-desc">Connected</div>
+                        <div className="stat-value text-purple-600">{stats.totalTeachers}</div>
+                        <div className="stat-desc">Approved teachers</div>
                     </div>
                 </div>
 
@@ -301,7 +297,7 @@ const AdminHome = () => {
                                                             {account.studentName || account.teacherName}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
-                                                            {account.phone || 'No phone'}
+                                                            {account.teacherPhone || account.studentPhone || 'No phone'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -319,7 +315,7 @@ const AdminHome = () => {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="truncate max-w-xs">{account.email}</td>
+                                            <td className="truncate max-w-xs">{account.teacherEmail ||account.studentEmail || 'N/A'}</td>
                                             <td>
                                                 {moment(account.createdAt).format("MMM Do YYYY")}
                                             </td>
@@ -333,7 +329,7 @@ const AdminHome = () => {
                                                         <FaEye />
                                                     </button>
                                                     <button
-                                                        onClick={() => approveAccount(account._id, account.walletAddress)}
+                                                        onClick={() => approveAccount(account._id, account.walletAddress, account.role)}
                                                         className="btn btn-sm btn-success"
                                                     >
                                                         <FaCheck />
@@ -356,9 +352,9 @@ const AdminHome = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div className="mt-8">
                     {/* System Overview */}
-                    <div className="bg-base-100 rounded-lg shadow p-6">
+                    {/* <div className="bg-base-100 rounded-lg shadow p-6">
                         <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                             <SiSemanticweb className="text-green-500" />
                             System Overview
@@ -385,7 +381,8 @@ const AdminHome = () => {
                                 <div className="text-xs text-green-600 mt-1">● Enabled</div>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
+
                     {/* System Status */}
                     <div className="bg-base-100 rounded-lg shadow p-4">
                         <h4 className="font-semibold mb-2">Current Academic Year</h4>
@@ -397,7 +394,7 @@ const AdminHome = () => {
                 </div>
             </div>
 
-            {/* Account Details Modal */}
+            {/* Account Details Modal - Keep your existing modal code */}
             {showModal && selectedAccount && (
                 <div className="modal modal-open">
                     <div className="modal-box max-w-2xl">
@@ -409,9 +406,9 @@ const AdminHome = () => {
                                     <label className="label">
                                         <span className="label-text font-semibold">Full Name</span>
                                     </label>
-                                    <p>{selectedAccount.studentName || selectedAccount.teacherName}</p>
+                                    <p className="text-lg">{selectedAccount.studentName || selectedAccount.teacherName}</p>
                                 </div>
-                                <div>
+                                <div className='flex gap-5 items-center'>
                                     <label className="label">
                                         <span className="label-text font-semibold">Role</span>
                                     </label>
@@ -426,7 +423,7 @@ const AdminHome = () => {
                                     <label className="label">
                                         <span className="label-text font-semibold">Email</span>
                                     </label>
-                                    <p>{selectedAccount.email}</p>
+                                    <p>{selectedAccount.email || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <label className="label">
@@ -523,7 +520,7 @@ const AdminHome = () => {
                         <div className="modal-action">
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="btn"
+                                className="btn btn-primary"
                             >
                                 Close
                             </button>
