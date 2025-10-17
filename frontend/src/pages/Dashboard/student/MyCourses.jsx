@@ -153,7 +153,7 @@ const MyCourses = () => {
                 <th>Teacher</th>
                 <th>Semester</th>
                 <th>Type</th>
-                <th>Progress</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>

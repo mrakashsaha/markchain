@@ -430,6 +430,21 @@ async function run() {
         });
 
 
+        // Store public key
+        app.patch("/store-public-key", async (req, res) => {
+            try {
+
+                const {walletAddress, publicKey} = req.body;
+
+                const result = await usersCollection.updateOne({walletAddress}, { $set: { publicKey } })
+                res.send(result);
+
+            }
+            catch {
+                res.status(400).json("Server Error")
+            }
+        })
+
 
         // Manage semisters
 
@@ -1593,6 +1608,333 @@ async function run() {
         });
 
 
+        // Teachers API
+        // app.get("/teacher-courses", async (req, res) => {
+        //     try {
+        //         const { teacherWallet, semesterCode } = req.query;
+        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
+
+        //         const match = { teacherWallet };
+        //         if (semesterCode) match.semesterCode = semesterCode;
+
+        //         const pipeline = [
+        //             { $match: match },
+        //             {
+        //                 $lookup: {
+        //                     from: "courses",
+        //                     localField: "courseCode",
+        //                     foreignField: "courseCode",
+        //                     as: "courseDetails",
+        //                 },
+        //             },
+        //             { $unwind: "$courseDetails" },
+        //             {
+        //                 $lookup: {
+        //                     from: "semesters",
+        //                     localField: "semesterCode",
+        //                     foreignField: "semesterCode",
+        //                     as: "semesterDetails",
+        //                 },
+        //             },
+        //             { $unwind: { path: "$semesterDetails", preserveNullAndEmptyArrays: true } },
+        //             { $addFields: { offerIdStr: { $toString: "$_id" } } },
+        //             {
+        //                 $lookup: {
+        //                     from: "enrollment",
+        //                     localField: "offerIdStr",
+        //                     foreignField: "assignedCourseId",
+        //                     as: "enrollments",
+        //                 },
+        //             },
+        //             {
+        //                 $project: {
+        //                     _id: 1,
+        //                     courseCode: 1,
+        //                     isOffered: 1,
+        //                     studentLimit: 1,
+        //                     assignedAt: 1,
+        //                     enrolledCount: { $size: "$enrollments" },
+        //                     courseTitle: "$courseDetails.courseTitle",
+        //                     credit: "$courseDetails.credit",
+        //                     department: "$courseDetails.department",
+        //                     semesterCode: "$semesterDetails.semesterCode",
+        //                     semesterName: "$semesterDetails.semesterName",
+        //                     semesterYear: "$semesterDetails.year",
+        //                     semesterStatus: "$semesterDetails.status",
+        //                 },
+        //             },
+        //             { $sort: { assignedAt: -1 } },
+        //         ];
+
+        //         const data = await assignedCoursesCollection.aggregate(pipeline).toArray();
+        //         res.status(200).json(data);
+        //     } catch (err) {
+        //         console.error("GET /teacher-courses error:", err);
+        //         res.status(500).json({ message: "Server error" });
+        //     }
+        // });
+
+        // /**
+        //  * 2) Get enrolled students for a specific course offering
+        //  * GET /teacher-courses/:assignedCourseId/students?teacherWallet=0x..
+        //  */
+        // app.get("/teacher-courses/:assignedCourseId/students", async (req, res) => {
+        //     try {
+        //         const { assignedCourseId } = req.params;
+        //         const { teacherWallet } = req.query;
+        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
+
+        //         if (!ObjectId.isValid(assignedCourseId)) {
+        //             return res.status(400).json({ message: "Invalid assignedCourseId" });
+        //         }
+
+        //         const offer = await assignedCoursesCollection.findOne({
+        //             _id: new ObjectId(assignedCourseId),
+        //             teacherWallet,
+        //         });
+        //         if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
+
+        //         const assignedIdStr = String(offer._id);
+
+        //         const pipeline = [
+        //             { $match: { assignedCourseId: assignedIdStr, teacherWallet } },
+        //             {
+        //                 $lookup: {
+        //                     from: "users",
+        //                     localField: "studentWallet",
+        //                     foreignField: "walletAddress",
+        //                     as: "student",
+        //                 },
+        //             },
+        //             { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
+        //             {
+        //                 $project: {
+        //                     _id: 0,
+        //                     enrollmentId: { $toString: "$_id" },
+        //                     studentWallet: 1,
+        //                     studentName: "$student.studentName",
+        //                     studentEmail: "$student.studentEmail",
+        //                     type: 1,
+        //                     isCompleted: 1,
+        //                     marks: 1, // { attendance, mid, final, total, grade, updatedAt, status }
+        //                 },
+        //             },
+        //             { $sort: { "student.studentName": 1, studentWallet: 1 } },
+        //         ];
+
+        //         const students = await enrollmentCollection.aggregate(pipeline).toArray();
+        //         res.status(200).json({
+        //             assignedCourseId: String(offer._id),
+        //             courseCode: offer.courseCode,
+        //             semesterCode: offer.semesterCode,
+        //             students,
+        //         });
+        //     } catch (err) {
+        //         console.error("GET /teacher-courses/:id/students error:", err);
+        //         res.status(500).json({ message: "Server error" });
+        //     }
+        // });
+
+        // /**
+        //  * 3) Bulk save/submit grades
+        //  * PATCH /teacher-courses/:assignedCourseId/grades
+        //  * Body: { teacherWallet, updates: [{ enrollmentId, attendance, mid, final, isCompleted }] }
+        //  */
+        // app.patch("/teacher-courses/:assignedCourseId/grades", async (req, res) => {
+        //     try {
+        //         const { assignedCourseId } = req.params;
+        //         const { teacherWallet, updates } = req.body;
+
+        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
+        //         if (!Array.isArray(updates) || updates.length === 0) {
+        //             return res.status(400).json({ message: "updates array required" });
+        //         }
+        //         if (!ObjectId.isValid(assignedCourseId)) {
+        //             return res.status(400).json({ message: "Invalid assignedCourseId" });
+        //         }
+
+        //         const offer = await assignedCoursesCollection.findOne({
+        //             _id: new ObjectId(assignedCourseId),
+        //             teacherWallet,
+        //         });
+        //         if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
+
+        //         const assignedIdStr = String(offer._id);
+
+        //         const ops = [];
+        //         for (const u of updates) {
+        //             if (!ObjectId.isValid(u.enrollmentId)) continue;
+
+        //             // Parse numbers safely; clamp to [0, 100]
+        //             const attendance = Math.max(0, Math.min(100, Number(u.attendance ?? 0)));
+        //             const mid = Math.max(0, Math.min(100, Number(u.mid ?? 0)));
+        //             const final = Math.max(0, Math.min(100, Number(u.final ?? 0)));
+        //             const total = attendance + mid + final;
+        //             const grade = gradeFromTotal(total);
+        //             const isCompleted = !!u.isCompleted;
+
+        //             const marks = {
+        //                 attendance,
+        //                 mid,
+        //                 final,
+        //                 total,
+        //                 grade,
+        //                 status: isCompleted ? "submitted" : "draft",
+        //                 updatedAt: new Date(),
+        //             };
+
+        //             ops.push({
+        //                 updateOne: {
+        //                     filter: {
+        //                         _id: new ObjectId(u.enrollmentId),
+        //                         assignedCourseId: assignedIdStr,
+        //                         teacherWallet,
+        //                     },
+        //                     update: { $set: { marks, isCompleted } },
+        //                 },
+        //             });
+        //         }
+
+        //         if (ops.length === 0) {
+        //             return res.status(400).json({ message: "No valid updates" });
+        //         }
+
+        //         const result = await enrollmentCollection.bulkWrite(ops, { ordered: false });
+        //         res.status(200).json({
+        //             matched: result.matchedCount,
+        //             modified: result.modifiedCount,
+        //         });
+        //     } catch (err) {
+        //         console.error("PATCH /teacher-courses/:id/grades error:", err);
+        //         res.status(500).json({ message: "Server error" });
+        //     }
+        // });
+
+        // GET /teacher-courses?teacherWallet=0x...&semesterCode=spring2025
+        app.get("/teacher-courses", async (req, res) => {
+            try {
+                const { teacherWallet, semesterCode } = req.query;
+                if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
+
+                const match = { teacherWallet };
+                if (semesterCode) match.semesterCode = semesterCode;
+
+                const pipeline = [
+                    { $match: match },
+                    {
+                        $lookup: {
+                            from: "courses",
+                            localField: "courseCode",
+                            foreignField: "courseCode",
+                            as: "courseDetails",
+                        },
+                    },
+                    { $unwind: "$courseDetails" },
+                    {
+                        $lookup: {
+                            from: "semesters",
+                            localField: "semesterCode",
+                            foreignField: "semesterCode",
+                            as: "semesterDetails",
+                        },
+                    },
+                    { $unwind: { path: "$semesterDetails", preserveNullAndEmptyArrays: true } },
+                    { $addFields: { offerIdStr: { $toString: "$_id" } } },
+                    {
+                        $lookup: {
+                            from: "enrollment",
+                            localField: "offerIdStr",
+                            foreignField: "assignedCourseId",
+                            as: "enrollments",
+                        },
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            courseCode: 1,
+                            isOffered: 1,
+                            studentLimit: 1,
+                            assignedAt: 1,
+                            enrolledCount: { $size: "$enrollments" },
+                            courseTitle: "$courseDetails.courseTitle",
+                            credit: "$courseDetails.credit",
+                            department: "$courseDetails.department",
+                            semesterCode: "$semesterDetails.semesterCode",
+                            semesterName: "$semesterDetails.semesterName",
+                            semesterYear: "$semesterDetails.year",
+                            semesterStatus: "$semesterDetails.status",
+                        },
+                    },
+                    { $sort: { assignedAt: -1 } },
+                ];
+
+                const data = await assignedCoursesCollection.aggregate(pipeline).toArray();
+                res.status(200).json(data);
+            } catch (err) {
+                console.error("GET /teacher-courses error:", err);
+                res.status(500).json({ message: "Server error" });
+            }
+        });
+
+        // GET /teacher-course-students?teacherWallet=0x...&assignedCourseId=...
+        app.get("/teacher-course-students", async (req, res) => {
+            try {
+                const { teacherWallet, assignedCourseId, isCompleted } = req.query;
+                if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
+                if (!assignedCourseId) return res.status(400).json({ message: "assignedCourseId is required" });
+                if (!ObjectId.isValid(assignedCourseId)) {
+                    return res.status(400).json({ message: "Invalid assignedCourseId" });
+                }
+
+                // authorize ownership
+                const offer = await assignedCoursesCollection.findOne({
+                    _id: new ObjectId(assignedCourseId),
+                    teacherWallet,
+                    // only not completed course
+                });
+                if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
+
+                const assignedIdStr = String(offer._id);
+                const boolIsCompleted = Boolean(isCompleted);
+
+                const pipeline = [
+                    { $match: { assignedCourseId: assignedIdStr, teacherWallet, isCompleted: boolIsCompleted } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "studentWallet",
+                            foreignField: "walletAddress",
+                            as: "student",
+                        },
+                    },
+                    { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
+                    {
+                        $project: {
+                            _id: 0,
+                            enrollmentId: { $toString: "$_id" },
+                            studentWallet: 1,
+                            studentName: "$student.studentName",
+                            studentEmail: "$student.studentEmail",
+                            type: 1,
+                            isCompleted: 1,
+                            marks: 1, // pass-through if exists
+                        },
+                    },
+                    { $sort: { "student.studentName": 1, studentWallet: 1 } },
+                ];
+
+                const students = await enrollmentCollection.aggregate(pipeline).toArray();
+                res.status(200).json({
+                    assignedCourseId: String(offer._id),
+                    courseCode: offer.courseCode,
+                    semesterCode: offer.semesterCode,
+                    students,
+                });
+            } catch (err) {
+                console.error("GET /teacher-course-students error:", err);
+                res.status(500).json({ message: "Server error" });
+            }
+        });
 
 
 

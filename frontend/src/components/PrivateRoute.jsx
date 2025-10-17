@@ -24,7 +24,12 @@ const PrivateRoute = ({ children }) => {
       if (userInfo.status === "pending") {
         return <Navigate to="/pending" replace />;
       } else if (userInfo.status === "approved") {
-        return <Navigate to="/dashboard" replace />;
+        if (userInfo.publicKey === null) {
+          return <Navigate to="/private-key" replace />;
+        }
+        else {
+          return <Navigate to="/dashboard" replace />;
+        }
       }
       else {
         return <Navigate to="/reject" replace />;

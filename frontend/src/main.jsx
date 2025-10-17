@@ -18,6 +18,8 @@ import CreateCourses from './pages/Dashboard/admin/CreateCourses.jsx';
 import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses.jsx';
 import EnrollCourses from './pages/Dashboard/student/EnrollCourses.jsx';
 import MyCourses from './pages/Dashboard/student/MyCourses.jsx';
+import SubmitGrades from './pages/Dashboard/teacher/SubmitGrades.jsx';
+import RequestPrivateKey from './components/RequestPrivateKey.jsx';
 
 
 
@@ -43,6 +45,10 @@ const router = createBrowserRouter([
       {
         path: "/reject",
         element: <PrivateRoute><RejectedAccount></RejectedAccount></PrivateRoute>,
+      },
+      {
+        path: "/private-key",
+        element: <PrivateRoute><RequestPrivateKey></RequestPrivateKey></PrivateRoute>,
       },
     ]
   },
@@ -111,7 +117,7 @@ const router = createBrowserRouter([
       },
       {
         path: "teacher/grade-submission",
-        element: <h2>Submit Grades</h2>,
+        element: <SubmitGrades></SubmitGrades>,
       },
     ]
   },
