@@ -3,8 +3,6 @@ import RegisterStudent from '../../components/RegisterStudent';
 import RegisterTeacher from '../../components/RegisterTeacher';
 import { PiStudent } from "react-icons/pi";
 import { PiChalkboardTeacherLight } from "react-icons/pi";
-import { AuthContext } from '../../contextAPI/AuthContext';
-import LoadingSpiner from '../../components/LoadingSpiner';
 
 
 const Register = () => {

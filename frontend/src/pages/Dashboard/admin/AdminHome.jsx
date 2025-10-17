@@ -201,7 +201,11 @@ const AdminHome = () => {
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
                     <p className="text-gray-300 mt-2">
-                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}
+                        Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}!
+                    </p>
+                    <p className="text-gray-400">
+                        <FaWallet className="inline-block mr-2" /> 
+                        {userInfo?.walletAddress ? formatWalletAddress(userInfo.walletAddress) : 'N/A'}
                     </p>
                 </div>
 
@@ -293,7 +297,7 @@ const AdminHome = () => {
                                                             {account.studentName || account.teacherName}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
-                                                            {account.phone || 'No phone'}
+                                                            {account.teacherPhone || account.studentPhone || 'No phone'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -311,7 +315,7 @@ const AdminHome = () => {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="truncate max-w-xs">{account.email}</td>
+                                            <td className="truncate max-w-xs">{account.teacherEmail ||account.studentEmail || 'N/A'}</td>
                                             <td>
                                                 {moment(account.createdAt).format("MMM Do YYYY")}
                                             </td>

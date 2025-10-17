@@ -28,6 +28,7 @@ const AuthProvider = ({ children }) => {
     const disconnectWallet = () => {
         setAccount(null);
         setUserInfo(null);
+        
     };
 
     useEffect(() => {
@@ -87,6 +88,7 @@ const AuthProvider = ({ children }) => {
     const authInfo = {
         account,
         loading,
+        setLoading,
         userInfo,
         connectWallet,
         disconnectWallet,
