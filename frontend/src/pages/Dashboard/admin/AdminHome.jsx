@@ -62,57 +62,6 @@ const AdminHome = () => {
         }
     }, [userInfo]);
 
-    // Approve account
-    const approveAccount = async (accountId, walletAddress, role) => {
-        try {
-            const result = await Swal.fire({
-                title: 'Approve Account?',
-                text: 'This will grant the user access to the system',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10B981',
-                cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Yes, Approve!'
-            });
-
-            if (result.isConfirmed) {
-                const response = await nodeBackend.post('/admin/approve-account', {
-                    accountId,
-                    walletAddress,
-                    approvedBy: userInfo.walletAddress
-                });
-
-                if (response.data.success) {
-                    // Update local state
-                    setPendingAccounts(prev => prev.filter(account => account._id !== accountId));
-                    setStats(prev => ({
-                        ...prev,
-                        pendingApprovals: prev.pendingApprovals - 1,
-                        // Increment the appropriate role count
-                        totalStudents: role === 'student' ? prev.totalStudents + 1 : prev.totalStudents,
-                        totalTeachers: role === 'teacher' ? prev.totalTeachers + 1 : prev.totalTeachers
-                    }));
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Approved!',
-                        text: 'Account has been approved successfully',
-                        timer: 2000
-                    });
-                } else {
-                    throw new Error(response.data.message);
-                }
-            }
-        } catch (error) {
-            console.error("Error approving account:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.message || 'Failed to approve account'
-            });
-        }
-    };
-
     // Reject account
     const rejectAccount = async (accountId, walletAddress) => {
         try {
@@ -204,7 +153,7 @@ const AdminHome = () => {
                         Welcome back, {userInfo?.teacherName || userInfo?.studentName || 'Admin'}!
                     </p>
                     <p className="text-gray-400">
-                        <FaWallet className="inline-block mr-2" /> 
+                        <FaWallet className="inline-block mr-2" />
                         {userInfo?.walletAddress ? formatWalletAddress(userInfo.walletAddress) : 'N/A'}
                     </p>
                 </div>
@@ -303,9 +252,15 @@ const AdminHome = () => {
                                                 </div>
                                             </td>
                                             <td>
-                                                <span className={`badge ${account.role === 'student' ? 'badge-primary' : 'badge-secondary'}`}>
-                                                    {account.role}
-                                                </span>
+                                                <td>
+                                                    <span className={`badge ${account.role === 'student' ? 'badge-primary' :
+                                                        account.role === 'teacher' ? 'badge-secondary' :
+                                                            account.role === 'admin' ? 'badge-success' :
+                                                                'badge-neutral'
+                                                        }`}>
+                                                        {account.role}
+                                                    </span>
+                                                </td>
                                             </td>
                                             <td>
                                                 <div className="flex items-center gap-2">
@@ -315,7 +270,7 @@ const AdminHome = () => {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="truncate max-w-xs">{account.teacherEmail ||account.studentEmail || 'N/A'}</td>
+                                            <td className="truncate max-w-xs">{account.teacherEmail || account.studentEmail || 'N/A'}</td>
                                             <td>
                                                 {moment(account.createdAt).format("MMM Do YYYY")}
                                             </td>
@@ -329,11 +284,11 @@ const AdminHome = () => {
                                                         <FaEye />
                                                     </button>
                                                     <button
-                                                        onClick={() => approveAccount(account._id, account.walletAddress, account.role)}
                                                         className="btn btn-sm btn-success"
                                                     >
                                                         <FaCheck />
-                                                        Approve
+                                                        {account.status === 'approved' ? 'Approved' : 'Rejected'}
+                                                        {/* {account.status === 'pending' ? 'Approve' : 'Pending'} */}
                                                     </button>
                                                     <button
                                                         onClick={() => rejectAccount(account._id, account.walletAddress)}
