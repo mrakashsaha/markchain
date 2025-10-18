@@ -230,18 +230,8 @@ const SubmitGrades = () => {
     openCourse(selectedCourse); // refech current course
   };
 
-  if (!teacherWallet) {
-    return (
-      <div className="min-h-screen bg-base-200 text-gray-200 px-4 md:px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-primary mb-4">Submit Marks</h1>
-          <div className="alert alert-warning bg-base-100">Please log in as a teacher.</div>
-        </div>
-      </div>
-    );
-  }
 
-  if (!selectedSemester && semesters.length === 0) return <LoadingSpiner />;
+  if (!teacherWallet || !selectedSemester && semesters.length === 0) return <LoadingSpiner />;
 
   return (
     <div className="min-h-screen bg-base-200 text-gray-200 px-4 md:px-6 py-8">

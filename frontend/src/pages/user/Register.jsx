@@ -3,20 +3,11 @@ import RegisterStudent from '../../components/RegisterStudent';
 import RegisterTeacher from '../../components/RegisterTeacher';
 import { PiStudent } from "react-icons/pi";
 import { PiChalkboardTeacherLight } from "react-icons/pi";
-import { useContext } from 'react';
-import LoadingSpiner from '../../components/LoadingSpiner';
-import { AuthContext } from '../../contextAPI/AuthContext';
+
 
 
 const Register = () => {
-    const [role, setRole] = useState(null);
-    const {loading, account, userInfo} = useContext(AuthContext);
-    // if (loading || !account) return <LoadingSpiner></LoadingSpiner>
-
-    console.log(userInfo);
-    console.log(account);
-
-   
+    const [role, setRole] = useState(null); 
     return (
 
         <>
