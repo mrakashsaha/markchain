@@ -133,7 +133,7 @@ const SubmitGrades = () => {
     setStudents([]);
     setMarksMap({});
     try {
-      const params = new URLSearchParams({ teacherWallet, assignedCourseId: course._id, isCompleted: false});
+      const params = new URLSearchParams({ teacherWallet, assignedCourseId: course._id, isCompleted: false });
       const { data } = await nodeBackend.get(`/teacher-course-students?${params.toString()}`);
       const rows = data?.students || [];
       setStudents(rows);
@@ -197,6 +197,38 @@ const SubmitGrades = () => {
     const { letter, points } = gradeInfoFromPercent(percent);
 
     const payload = {
+      data: {
+        enrollmentId: student.enrollmentId,
+        marks: {
+          components: scheme.fields.reduce((obj, f) => {
+            obj[f.key] = Number(m[f.key]);
+            return obj;
+          }, {}),
+          total,              
+          letterGrade: letter,
+          gradePoints: points,
+        },
+        computedAt: new Date().toISOString(),
+      },
+
+      recipients: [
+        { 
+          id: userInfo?.walletAddress,
+          publicKey: userInfo?.publicKey,
+        },
+        { 
+          id: student?.studentWallet,
+          publicKey: student?.studentPublicKey,
+        },
+      ]
+    }
+
+    nodeBackend.post("/encrypt", payload)
+    .then (res=>console.log(res.data))
+    .catch(error=> console.log(error))
+
+
+    const allData = {
       assignedCourseId: selectedCourse?._id,
       courseCode: selectedCourse?.courseCode,
       semesterCode: selectedCourse?.semesterCode || selectedSemester,
@@ -222,7 +254,8 @@ const SubmitGrades = () => {
       computedAt: new Date().toISOString(),
     };
 
-    console.log("SUBMIT_MARKS", payload);
+    console.log(allData);
+
     CustomToast({
       icon: "success",
       title: `Marks submitted for ${student.studentName || student.studentWallet}`,

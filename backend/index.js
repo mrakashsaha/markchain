@@ -8,6 +8,36 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 
+// ---- IPFS helpers ----
+let ipfsClient;
+async function getIpfs(opts = {}) {
+    if (!ipfsClient) {
+        const { create } = await import('kubo-rpc-client');
+        ipfsClient = create({
+            url: process.env.IPFS_RPC_URL || 'http://127.0.0.1:5001',
+            ...opts,
+        });
+    }
+    return ipfsClient;
+}
+
+
+async function uploadEnvelope(envelope, ipfsOrOpts) {
+
+    const ipfs = ipfsOrOpts && ipfsOrOpts.add ? ipfsOrOpts : await getIpfs(ipfsOrOpts || {});
+    const { cid } = await ipfs.add(JSON.stringify(envelope), { pin: true, cidVersion: 1 });
+    return cid.toString();
+}
+
+async function getEnvelope(cid, ipfsOrOpts) {
+    const ipfs = ipfsOrOpts && ipfsOrOpts.cat ? ipfsOrOpts : await getIpfs(ipfsOrOpts || {});
+    const chunks = [];
+    for await (const chunk of ipfs.cat(cid)) chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
+
+
 // Middlewires
 app.use(cors());
 app.use(express.json());
@@ -147,7 +177,7 @@ app.post('/decrypt', (req, res) => {
 
 
 // Encrypt Data for Multiple / Single User
-app.post('/encrypt', (req, res) => {
+app.post('/encrypt', async (req, res) => {
     try {
         const { data, recipients } = req.body;
 
@@ -180,13 +210,26 @@ app.post('/encrypt', (req, res) => {
             return { recipientId: r.id, encryptedKey: encryptedKey.toString('base64') };
         });
 
-        // 5) Send encrypted package
-        res.json({
+        // 5) Send encrypted package to IPFS
+
+        const encryptedPackage = {
             ciphertext: ciphertext.toString('base64'),
             iv: iv.toString('base64'),
             authTag: authTag.toString('base64'),
             encryptedKeys
-        });
+        }
+
+        const ipfs = await getIpfs();
+        const cid = await uploadEnvelope(encryptedPackage, ipfs);
+
+        return res.json({ cid });
+
+
+        // console.log(encryptedPackage);
+
+
+
+        // res.json(encryptedPackage);
 
     } catch (err) {
         console.error(err);
@@ -196,7 +239,19 @@ app.post('/encrypt', (req, res) => {
 
 
 
+app.get("/ipfsData", async (req, res) => {
 
+    try {
+        const cid = req.query.cid;
+        const ipfs = await getIpfs();
+        const envelope = await getEnvelope(cid, ipfs);
+        return res.json(envelope);
+    }
+    catch (err) {
+        console.error('Get envelope error:', err);
+        return res.status(404).json({ error: 'Failed to fetch envelope', details: err.message })
+    }
+})
 
 
 // NodeMailer Functionalitis
@@ -434,9 +489,9 @@ async function run() {
         app.patch("/store-public-key", async (req, res) => {
             try {
 
-                const {walletAddress, publicKey} = req.body;
+                const { walletAddress, publicKey } = req.body;
 
-                const result = await usersCollection.updateOne({walletAddress}, { $set: { publicKey } })
+                const result = await usersCollection.updateOne({ walletAddress }, { $set: { publicKey } })
                 res.send(result);
 
             }
@@ -1724,206 +1779,6 @@ async function run() {
 
 
         // Teachers API
-        // app.get("/teacher-courses", async (req, res) => {
-        //     try {
-        //         const { teacherWallet, semesterCode } = req.query;
-        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
-
-        //         const match = { teacherWallet };
-        //         if (semesterCode) match.semesterCode = semesterCode;
-
-        //         const pipeline = [
-        //             { $match: match },
-        //             {
-        //                 $lookup: {
-        //                     from: "courses",
-        //                     localField: "courseCode",
-        //                     foreignField: "courseCode",
-        //                     as: "courseDetails",
-        //                 },
-        //             },
-        //             { $unwind: "$courseDetails" },
-        //             {
-        //                 $lookup: {
-        //                     from: "semesters",
-        //                     localField: "semesterCode",
-        //                     foreignField: "semesterCode",
-        //                     as: "semesterDetails",
-        //                 },
-        //             },
-        //             { $unwind: { path: "$semesterDetails", preserveNullAndEmptyArrays: true } },
-        //             { $addFields: { offerIdStr: { $toString: "$_id" } } },
-        //             {
-        //                 $lookup: {
-        //                     from: "enrollment",
-        //                     localField: "offerIdStr",
-        //                     foreignField: "assignedCourseId",
-        //                     as: "enrollments",
-        //                 },
-        //             },
-        //             {
-        //                 $project: {
-        //                     _id: 1,
-        //                     courseCode: 1,
-        //                     isOffered: 1,
-        //                     studentLimit: 1,
-        //                     assignedAt: 1,
-        //                     enrolledCount: { $size: "$enrollments" },
-        //                     courseTitle: "$courseDetails.courseTitle",
-        //                     credit: "$courseDetails.credit",
-        //                     department: "$courseDetails.department",
-        //                     semesterCode: "$semesterDetails.semesterCode",
-        //                     semesterName: "$semesterDetails.semesterName",
-        //                     semesterYear: "$semesterDetails.year",
-        //                     semesterStatus: "$semesterDetails.status",
-        //                 },
-        //             },
-        //             { $sort: { assignedAt: -1 } },
-        //         ];
-
-        //         const data = await assignedCoursesCollection.aggregate(pipeline).toArray();
-        //         res.status(200).json(data);
-        //     } catch (err) {
-        //         console.error("GET /teacher-courses error:", err);
-        //         res.status(500).json({ message: "Server error" });
-        //     }
-        // });
-
-        // /**
-        //  * 2) Get enrolled students for a specific course offering
-        //  * GET /teacher-courses/:assignedCourseId/students?teacherWallet=0x..
-        //  */
-        // app.get("/teacher-courses/:assignedCourseId/students", async (req, res) => {
-        //     try {
-        //         const { assignedCourseId } = req.params;
-        //         const { teacherWallet } = req.query;
-        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
-
-        //         if (!ObjectId.isValid(assignedCourseId)) {
-        //             return res.status(400).json({ message: "Invalid assignedCourseId" });
-        //         }
-
-        //         const offer = await assignedCoursesCollection.findOne({
-        //             _id: new ObjectId(assignedCourseId),
-        //             teacherWallet,
-        //         });
-        //         if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
-
-        //         const assignedIdStr = String(offer._id);
-
-        //         const pipeline = [
-        //             { $match: { assignedCourseId: assignedIdStr, teacherWallet } },
-        //             {
-        //                 $lookup: {
-        //                     from: "users",
-        //                     localField: "studentWallet",
-        //                     foreignField: "walletAddress",
-        //                     as: "student",
-        //                 },
-        //             },
-        //             { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
-        //             {
-        //                 $project: {
-        //                     _id: 0,
-        //                     enrollmentId: { $toString: "$_id" },
-        //                     studentWallet: 1,
-        //                     studentName: "$student.studentName",
-        //                     studentEmail: "$student.studentEmail",
-        //                     type: 1,
-        //                     isCompleted: 1,
-        //                     marks: 1, // { attendance, mid, final, total, grade, updatedAt, status }
-        //                 },
-        //             },
-        //             { $sort: { "student.studentName": 1, studentWallet: 1 } },
-        //         ];
-
-        //         const students = await enrollmentCollection.aggregate(pipeline).toArray();
-        //         res.status(200).json({
-        //             assignedCourseId: String(offer._id),
-        //             courseCode: offer.courseCode,
-        //             semesterCode: offer.semesterCode,
-        //             students,
-        //         });
-        //     } catch (err) {
-        //         console.error("GET /teacher-courses/:id/students error:", err);
-        //         res.status(500).json({ message: "Server error" });
-        //     }
-        // });
-
-        // /**
-        //  * 3) Bulk save/submit grades
-        //  * PATCH /teacher-courses/:assignedCourseId/grades
-        //  * Body: { teacherWallet, updates: [{ enrollmentId, attendance, mid, final, isCompleted }] }
-        //  */
-        // app.patch("/teacher-courses/:assignedCourseId/grades", async (req, res) => {
-        //     try {
-        //         const { assignedCourseId } = req.params;
-        //         const { teacherWallet, updates } = req.body;
-
-        //         if (!teacherWallet) return res.status(400).json({ message: "teacherWallet is required" });
-        //         if (!Array.isArray(updates) || updates.length === 0) {
-        //             return res.status(400).json({ message: "updates array required" });
-        //         }
-        //         if (!ObjectId.isValid(assignedCourseId)) {
-        //             return res.status(400).json({ message: "Invalid assignedCourseId" });
-        //         }
-
-        //         const offer = await assignedCoursesCollection.findOne({
-        //             _id: new ObjectId(assignedCourseId),
-        //             teacherWallet,
-        //         });
-        //         if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
-
-        //         const assignedIdStr = String(offer._id);
-
-        //         const ops = [];
-        //         for (const u of updates) {
-        //             if (!ObjectId.isValid(u.enrollmentId)) continue;
-
-        //             // Parse numbers safely; clamp to [0, 100]
-        //             const attendance = Math.max(0, Math.min(100, Number(u.attendance ?? 0)));
-        //             const mid = Math.max(0, Math.min(100, Number(u.mid ?? 0)));
-        //             const final = Math.max(0, Math.min(100, Number(u.final ?? 0)));
-        //             const total = attendance + mid + final;
-        //             const grade = gradeFromTotal(total);
-        //             const isCompleted = !!u.isCompleted;
-
-        //             const marks = {
-        //                 attendance,
-        //                 mid,
-        //                 final,
-        //                 total,
-        //                 grade,
-        //                 status: isCompleted ? "submitted" : "draft",
-        //                 updatedAt: new Date(),
-        //             };
-
-        //             ops.push({
-        //                 updateOne: {
-        //                     filter: {
-        //                         _id: new ObjectId(u.enrollmentId),
-        //                         assignedCourseId: assignedIdStr,
-        //                         teacherWallet,
-        //                     },
-        //                     update: { $set: { marks, isCompleted } },
-        //                 },
-        //             });
-        //         }
-
-        //         if (ops.length === 0) {
-        //             return res.status(400).json({ message: "No valid updates" });
-        //         }
-
-        //         const result = await enrollmentCollection.bulkWrite(ops, { ordered: false });
-        //         res.status(200).json({
-        //             matched: result.matchedCount,
-        //             modified: result.modifiedCount,
-        //         });
-        //     } catch (err) {
-        //         console.error("PATCH /teacher-courses/:id/grades error:", err);
-        //         res.status(500).json({ message: "Server error" });
-        //     }
-        // });
 
         // GET /teacher-courses?teacherWallet=0x...&semesterCode=spring2025
         app.get("/teacher-courses", async (req, res) => {
@@ -2008,13 +1863,13 @@ async function run() {
                     // only not completed course
                 });
                 if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
-                
+
                 const assignedIdStr = String(offer._id);
-                let boolIsCompleted = (isCompleted==="true");
-               
+                let boolIsCompleted = (isCompleted === "true");
+
 
                 const pipeline = [
-                    { $match: { assignedCourseId: assignedIdStr, teacherWallet, isCompleted: boolIsCompleted} },
+                    { $match: { assignedCourseId: assignedIdStr, teacherWallet, isCompleted: boolIsCompleted } },
                     {
                         $lookup: {
                             from: "users",
@@ -2031,6 +1886,7 @@ async function run() {
                             studentWallet: 1,
                             studentName: "$student.studentName",
                             studentEmail: "$student.studentEmail",
+                            studentPublicKey: "$student.publicKey",
                             type: 1,
                             isCompleted: 1,
                             marks: 1, // pass-through if exists
