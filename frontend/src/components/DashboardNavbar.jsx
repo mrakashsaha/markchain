@@ -4,6 +4,7 @@ import { PiPowerBold } from "react-icons/pi";
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../contextAPI/AuthContext';
 import metamaskLogo from "../assets/metamask_logo.svg"
+import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 
 const DashBoardNavBar = () => {
@@ -27,24 +28,48 @@ const DashBoardNavBar = () => {
                                 </div>
                             </div>
                             :
+                            // <div>
+                            //     {account ?
+                            //         <div className='flex items-center gap-x-4'>
+                            //             <span>Connected: {account}</span>
+                            //             <div className="w-8">
+                            //                 <img alt="MetaMask_Logo" src={metamaskLogo} />
+                            //             </div>
+                            //         </div>
+                            //         :
+                            //         <div className='flex items-center gap-x-4'>
+                            //             <span>No account connected</span>
+                            //             <div className="w-8">
+                            //                 <img alt="MetaMask_Logo" src={metamaskLogo} />
+                            //             </div>
+                            //         </div>
+
+                            //     }
+                            // </div>
                             <div>
                                 {account ?
                                     <div className='flex items-center gap-x-4'>
-                                        <span>Connected: {account}</span>
+                                        <div className="flex items-center gap-2 text-green-600">
+                                            <FaCheckCircle className="text-lg" />
+                                            <span>Connected: {account}</span>
+                                        </div>
                                         <div className="w-8">
                                             <img alt="MetaMask_Logo" src={metamaskLogo} />
                                         </div>
                                     </div>
                                     :
                                     <div className='flex items-center gap-x-4'>
-                                        <span>No account connected</span>
+                                        <div className="flex items-center gap-2 text-red-600">
+                                            <FaTimesCircle className="text-lg" />
+                                            <span>No account connected</span>
+                                        </div>
                                         <div className="w-8">
                                             <img alt="MetaMask_Logo" src={metamaskLogo} />
                                         </div>
                                     </div>
-
                                 }
-                            </div>}
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
