@@ -144,7 +144,7 @@ const AdminHome = () => {
     }
 
     return (
-        <div className="min-h-screen bg-base-200 p-6">
+        <div className="min-h-screen bg-base-200 px-6 py-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -308,36 +308,6 @@ const AdminHome = () => {
                 </div>
 
                 <div className="mt-8">
-                    {/* System Overview */}
-                    {/* <div className="bg-base-100 rounded-lg shadow p-6">
-                        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                            <SiSemanticweb className="text-green-500" />
-                            System Overview
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-blue-50 rounded-lg">
-                                <div className="text-blue-600 font-semibold">Blockchain</div>
-                                <div className="text-sm text-gray-600">MetaMask Integration</div>
-                                <div className="text-xs text-green-600 mt-1">● Connected</div>
-                            </div>
-                            <div className="p-4 bg-green-50 rounded-lg">
-                                <div className="text-green-600 font-semibold">Database</div>
-                                <div className="text-sm text-gray-600">MongoDB</div>
-                                <div className="text-xs text-green-600 mt-1">● Online</div>
-                            </div>
-                            <div className="p-4 bg-purple-50 rounded-lg">
-                                <div className="text-purple-600 font-semibold">Authentication</div>
-                                <div className="text-sm text-gray-600">Web3 Wallet Auth</div>
-                                <div className="text-xs text-green-600 mt-1">● Active</div>
-                            </div>
-                            <div className="p-4 bg-orange-50 rounded-lg">
-                                <div className="text-orange-600 font-semibold">Security</div>
-                                <div className="text-sm text-gray-600">Role-based Access</div>
-                                <div className="text-xs text-green-600 mt-1">● Enabled</div>
-                            </div>
-                        </div>
-                    </div> */}
-
                     {/* System Status */}
                     <div className="bg-base-100 rounded-lg shadow p-4">
                         <h4 className="font-semibold mb-2">Current Academic Year</h4>
