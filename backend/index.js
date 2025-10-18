@@ -2008,12 +2008,13 @@ async function run() {
                     // only not completed course
                 });
                 if (!offer) return res.status(403).json({ message: "Not authorized or course not found" });
-
+                
                 const assignedIdStr = String(offer._id);
-                const boolIsCompleted = Boolean(isCompleted);
+                let boolIsCompleted = (isCompleted==="true");
+               
 
                 const pipeline = [
-                    { $match: { assignedCourseId: assignedIdStr, teacherWallet, isCompleted: boolIsCompleted } },
+                    { $match: { assignedCourseId: assignedIdStr, teacherWallet, isCompleted: boolIsCompleted} },
                     {
                         $lookup: {
                             from: "users",
