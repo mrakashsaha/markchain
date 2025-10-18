@@ -73,7 +73,7 @@ const DashBoardNavBar = () => {
     const { account, loading } = useContext(AuthContext);
 
     return (
-        <div className='bg-gradient-to-r from-slate-900 to-purple-900 border-b border-white/10 shadow-lg'>
+        <div className='bg-gradient-to-r from-slate-900 to-purple-900 border-b border-white/10 shadow-lg h-18'>
             <div className="navbar px-6 py-2">
                 {/* Logo and Brand */}
                 <div className="flex-1">
@@ -147,7 +147,7 @@ const DashBoardNavBar = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className='flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20 hover:border-red-400/50 transition-all duration-300 group'>
+                                <div className='flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-2 border border-white/20 hover:border-red-400/50 transition-all duration-300 group'>
                                     <div className="flex items-center gap-3">
                                         <div className="relative">
                                             <FaTimesCircle className="text-2xl text-red-400 group-hover:scale-110 transition-transform" />
