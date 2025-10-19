@@ -144,7 +144,6 @@
 // };
 
 // export default Register;
-
 import React, { useState } from 'react';
 import RegisterStudent from '../../components/RegisterStudent';
 import RegisterTeacher from '../../components/RegisterTeacher';
