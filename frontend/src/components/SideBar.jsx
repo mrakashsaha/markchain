@@ -88,7 +88,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-blue-50 text-blue-600 border-blue-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -102,7 +102,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-blue-50 text-blue-600 border-blue-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -116,7 +116,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-blue-50 text-blue-600 border-blue-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -130,7 +130,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-blue-50 text-blue-600 border-blue-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -144,7 +144,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-blue-50 text-blue-600 border-blue-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -162,7 +162,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-green-50 text-green-600 border-green-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -176,7 +176,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-green-50 text-green-600 border-green-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -190,7 +190,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-green-50 text-green-600 border-green-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -204,7 +204,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-green-50 text-green-600 border-green-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -222,7 +222,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-purple-50 text-purple-600 border-purple-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -236,7 +236,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-purple-50 text-purple-600 border-purple-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -250,7 +250,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-purple-50 text-purple-600 border-purple-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -264,7 +264,7 @@ const SideBar = () => {
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
                         isActive 
                             ? 'bg-purple-50 text-purple-600 border-purple-600 font-semibold' 
-                            : 'text-gray-600 hover:bg-gray-50 border-transparent hover:border-gray-300'
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
                     }`
                 }
             >
@@ -288,15 +288,15 @@ const SideBar = () => {
                 </div>
                 <div className="drawer-side">
                     <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label>
-                    <div className="bg-white min-h-full w-64 p-4 border-r border-gray-200">
+                    <div className="bg-[#080f25] min-h-full w-64 p-4 border-r border-none">
                         {/* Sidebar Header */}
                         <div className="flex items-center gap-3 p-4 border-b border-gray-300 mb-4">
                             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                                 <TbLayoutSidebarLeftCollapseFilled className="text-white text-sm" />
                             </div>
                             <div>
-                                <h2 className="font-bold text-gray-800 text-lg">MarkChain</h2>
-                                <p className="text-xs text-gray-500 capitalize">{userInfo?.role} Panel</p>
+                                <h2 className="font-bold text-white text-lg">MarkChain</h2>
+                                <p className="text-xs text-gray-200 capitalize">{userInfo?.role} Panel</p>
                             </div>
                         </div>
 
@@ -308,16 +308,16 @@ const SideBar = () => {
                         </nav>
 
                         {/* User Info */}
-                        <div className="absolute bottom-6 left-4 right-4">
+                        <div className="absolute bottom-6 left-4 right-4 mb-18">
                             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                 <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-sm">
                                     {userInfo?.studentName?.charAt(0) || userInfo?.teacherName?.charAt(0) || 'U'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-800 text-sm truncate">
+                                    <p className="font-medium text-gray-900 text-sm truncate">
                                         {userInfo?.studentName || userInfo?.teacherName || 'User'}
                                     </p>
-                                    <p className="text-xs text-gray-500 capitalize">{userInfo?.role}</p>
+                                    <p className="text-xs text-gray-700 capitalize">{userInfo?.role}</p>
                                 </div>
                             </div>
                         </div>
