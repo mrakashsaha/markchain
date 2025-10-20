@@ -1,6 +1,7 @@
 import { AuthContext } from "./AuthContext";
 import { useEffect, useState } from "react";
 import { nodeBackend } from "../axios/axiosInstance";
+import CustomToast from "../Toast/CustomToast";
 
 const AuthProvider = ({ children }) => {
     const [account, setAccount] = useState(null);
@@ -20,7 +21,10 @@ const AuthProvider = ({ children }) => {
                 setLoading(false);
             }
         } else {
-            alert("MetaMask not installed!");
+            CustomToast({
+                icon: "error",
+                title: "Please install MetaMask!",
+            });
             setLoading(false);
         }
     };
@@ -28,7 +32,7 @@ const AuthProvider = ({ children }) => {
     const disconnectWallet = () => {
         setAccount(null);
         setUserInfo(null);
-        
+
     };
 
     useEffect(() => {
