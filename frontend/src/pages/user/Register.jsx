@@ -3,7 +3,8 @@ import RegisterStudent from '../../components/RegisterStudent';
 import RegisterTeacher from '../../components/RegisterTeacher';
 import { PiStudent, PiChalkboardTeacherLight } from "react-icons/pi";
 import { FaArrowLeft, FaGraduationCap, FaUserTie } from "react-icons/fa";
-import registerPageLogo from "../../assets/register_page_logo_4.jpg";
+// import registerPageLogo from "../../assets/register_page_logo_4.jpg";
+import registerPageLogoMin from "../../assets/register_page_logo_4-min.jpg";
 
 const Register = () => {
     const [role, setRole] = useState(null);
@@ -13,7 +14,7 @@ const Register = () => {
             <div
                 className="hero min-h-screen relative"
                 style={{
-                    backgroundImage: `url(${registerPageLogo})`,
+                    backgroundImage: `url(${registerPageLogoMin})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundAttachment: 'fixed'
@@ -124,7 +125,7 @@ const Register = () => {
             </div>
 
             {/* Custom CSS for animations */}
-            <style jsx>{`
+            {/* <style jsx>{`
                 @keyframes fade-in {
                     from {
                         opacity: 0;
@@ -138,7 +139,7 @@ const Register = () => {
                 .animate-fade-in {
                     animation: fade-in 0.5s ease-out;
                 }
-            `}</style>
+            `}</style> */}
         </div>
     );
 };

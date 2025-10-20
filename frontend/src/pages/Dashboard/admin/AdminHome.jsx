@@ -205,7 +205,7 @@ const AdminHome = () => {
                 <div className="bg-base-100 rounded-lg shadow">
                     <div className="p-6 border-b border-base-300">
                         <h2 className="text-xl font-semibold">Pending Account Requests</h2>
-                        <p className="text-gray-600 text-sm mt-1">
+                        <p className="text-gray-400 text-sm mt-1">
                             Review and approve or reject account requests
                         </p>
                     </div>
@@ -214,7 +214,7 @@ const AdminHome = () => {
                         <div className="p-8 text-center">
                             <FaUser className="text-4xl text-gray-400 mx-auto mb-4" />
                             <h3 className="text-lg font-semibold text-gray-600">No Pending Requests</h3>
-                            <p className="text-gray-500">All account requests have been processed.</p>
+                            <p className="text-gray-400">All account requests have been processed.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -245,22 +245,20 @@ const AdminHome = () => {
                                                         <div className="font-bold">
                                                             {account.studentName || account.teacherName}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
+                                                        <div className="text-sm text-gray-400">
                                                             {account.teacherPhone || account.studentPhone || 'No phone'}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <td>
-                                                    <span className={`badge ${account.role === 'student' ? 'badge-primary' :
-                                                        account.role === 'teacher' ? 'badge-secondary' :
-                                                            account.role === 'admin' ? 'badge-success' :
-                                                                'badge-neutral'
-                                                        }`}>
-                                                        {account.role}
-                                                    </span>
-                                                </td>
+                                                <span className={`badge capitalize ${account.role === 'student' ? 'badge-primary' :
+                                                    account.role === 'teacher' ? 'badge-secondary' :
+                                                        account.role === 'admin' ? 'badge-success' :
+                                                            'badge-neutral'
+                                                    }`}>
+                                                    {account.role}
+                                                </span>
                                             </td>
                                             <td>
                                                 <div className="flex items-center gap-2">
