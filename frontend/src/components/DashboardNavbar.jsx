@@ -1,66 +1,3 @@
-// import React, { useContext } from 'react';
-// import { BiSolidCoinStack } from 'react-icons/bi';
-// import { PiPowerBold } from "react-icons/pi";
-// import { Link } from 'react-router-dom';
-// import { AuthContext } from '../contextAPI/AuthContext';
-// import metamaskLogo from "../assets/metamask_logo.svg"
-// import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-
-
-// const DashBoardNavBar = () => {
-//     const { account, loading } = useContext(AuthContext);
-//     return (
-//         <div className='bg-base-100 shadow-md'>
-//             <div className="navbar p-4">
-//                 <div className="flex-1">
-//                     <Link to={"/dashboard"} className="btn btn-ghost text-xl">MarkChain</Link>
-//                 </div>
-//                 <div className="flex items-center md:gap-4">
-//                     <div className=''>
-//                         {loading ?
-//                             <div>
-//                                 <div className="flex items-center gap-2">
-//                                     <div className="flex flex-col gap-2">
-//                                         <div className="skeleton h-2 w-58"></div>
-//                                         <div className="skeleton h-2 w-58"></div>
-//                                     </div>
-//                                     <div className="skeleton h-10 w-10 shrink-0 rounded-full"></div>
-//                                 </div>
-//                             </div>
-//                             :
-//                             <div>
-//                                 {account ?
-//                                     <div className='flex items-center gap-x-4'>
-//                                         <div className="flex items-center gap-2 text-green-600">
-//                                             <FaCheckCircle className="text-lg" />
-//                                             <span>Connected: {account}</span>
-//                                         </div>
-//                                         <div className="w-8">
-//                                             <img alt="MetaMask_Logo" src={metamaskLogo} />
-//                                         </div>
-//                                     </div>
-//                                     :
-//                                     <div className='flex items-center gap-x-4'>
-//                                         <div className="flex items-center gap-2 text-red-600">
-//                                             <FaTimesCircle className="text-lg" />
-//                                             <span>No account connected</span>
-//                                         </div>
-//                                         <div className="w-8">
-//                                             <img alt="MetaMask_Logo" src={metamaskLogo} />
-//                                         </div>
-//                                     </div>
-//                                 }
-//                             </div>
-//                         }
-//                     </div>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default DashBoardNavBar;
-
 import React, { useContext } from 'react';
 import { BiSolidCoinStack } from 'react-icons/bi';
 import { PiPowerBold } from "react-icons/pi";
@@ -73,10 +10,10 @@ const DashBoardNavBar = () => {
     const { account, loading } = useContext(AuthContext);
 
     return (
-        <div className='bg-gradient-to-r from-slate-900 to-purple-900 border-b border-white/10 shadow-lg h-18'>
+        <div className='bg-[#080f25] border-b border-white/10 shadow-lg h-18'>
             <div className="navbar px-6 py-2">
                 {/* Logo and Brand */}
-                <div className="flex-1">
+                <div className="flex justify-between items-center flex-1">
                     <Link
                         to={"/dashboard"}
                         className="flex items-center gap-3 text-2xl font-bold"
@@ -84,31 +21,9 @@ const DashBoardNavBar = () => {
                         {/* <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                             <BiSolidCoinStack className="text-white text-sm" />
                         </div> */}
-                        <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        <div className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent flex items-center gap-3 text-2xl font-bold">
                             MarkChain
-                        </span>
-                    </Link>
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex-none gap-2 mr-6">
-                    <Link
-                        to={"/dashboard"}
-                        className="btn btn-ghost btn-circle text-white hover:bg-white/10 hover:text-blue-300 transition-all duration-300 tooltip"
-                        data-tip="Dashboard"
-                    >
-                    </Link>
-                    <Link
-                        to={"/dashboard/profile"}
-                        className="btn btn-ghost btn-circle text-white hover:bg-white/10 hover:text-purple-300 transition-all duration-300 tooltip"
-                        data-tip="Profile"
-                    >
-                    </Link>
-                    <Link
-                        to={"/dashboard/settings"}
-                        className="btn btn-ghost btn-circle text-white hover:bg-white/10 hover:text-green-300 transition-all duration-300 tooltip"
-                        data-tip="Settings"
-                    >
+                        </div>
                     </Link>
                 </div>
 
