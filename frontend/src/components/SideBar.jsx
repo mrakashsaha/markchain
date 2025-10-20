@@ -296,7 +296,7 @@ const SideBar = () => {
                             </div>
                             <div>
                                 <h2 className="font-bold text-white text-lg">MarkChain</h2>
-                                <p className="text-xs text-gray-200 capitalize">{userInfo?.role} Panel</p>
+                                <p className="text-xs text-gray-200 capitalize tracking-wider">{userInfo?.role} Panel</p>
                             </div>
                         </div>
 
