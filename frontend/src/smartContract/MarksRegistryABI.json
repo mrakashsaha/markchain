@@ -1,0 +1,504 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "enrollmentId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "courseCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "semesterCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"name": "createSeries",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "uint32",
+				"name": "version",
+				"type": "uint32"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"name": "editSeries",
+		"outputs": [
+			{
+				"internalType": "uint32",
+				"name": "version",
+				"type": "uint32"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "previousOwner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "OwnershipTransferred",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "enrollmentId",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "courseCode",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "semesterCode",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"name": "SeriesCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "version",
+				"type": "uint32"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"name": "SeriesEdited",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "allowed",
+				"type": "bool"
+			}
+		],
+		"name": "setTeacher",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "allowed",
+				"type": "bool"
+			}
+		],
+		"name": "TeacherSet",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "enrollmentId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "courseCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "semesterCode",
+				"type": "string"
+			}
+		],
+		"name": "computeSeriesId",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			}
+		],
+		"name": "getSeriesHead",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "enrollmentId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "courseCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "semesterCode",
+				"type": "string"
+			},
+			{
+				"internalType": "uint32",
+				"name": "currentVersion",
+				"type": "uint32"
+			},
+			{
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"internalType": "uint64",
+				"name": "timestamp",
+				"type": "uint64"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "uint256",
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "getVersion",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "cid",
+				"type": "string"
+			},
+			{
+				"internalType": "uint64",
+				"name": "timestamp",
+				"type": "uint64"
+			},
+			{
+				"internalType": "address",
+				"name": "editor",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "seriesId",
+				"type": "bytes32"
+			}
+		],
+		"name": "getVersionCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "s",
+				"type": "string"
+			}
+		],
+		"name": "idOf",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isTeacher",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			}
+		],
+		"name": "listSeriesIdsByStudent",
+		"outputs": [
+			{
+				"internalType": "bytes32[]",
+				"name": "",
+				"type": "bytes32[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "student",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "semesterCode",
+				"type": "string"
+			}
+		],
+		"name": "listSeriesIdsByStudentAndSemester",
+		"outputs": [
+			{
+				"internalType": "bytes32[]",
+				"name": "out",
+				"type": "bytes32[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "teacher",
+				"type": "address"
+			}
+		],
+		"name": "listSeriesIdsByTeacher",
+		"outputs": [
+			{
+				"internalType": "bytes32[]",
+				"name": "",
+				"type": "bytes32[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

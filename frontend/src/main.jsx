@@ -20,6 +20,7 @@ import EnrollCourses from './pages/Dashboard/student/EnrollCourses.jsx';
 import MyCourses from './pages/Dashboard/student/MyCourses.jsx';
 import SubmitGrades from './pages/Dashboard/teacher/SubmitGrades.jsx';
 import RequestPrivateKey from './components/RequestPrivateKey.jsx';
+import SubmitMarks from './pages/Dashboard/teacher/SubmitMarks.jsx';
 
 
 
@@ -113,7 +114,7 @@ const router = createBrowserRouter([
       },
       {
         path: "teacher/student-list",
-        element: <h2>View Enrolled Students</h2>,
+        element: <SubmitMarks></SubmitMarks>
       },
       {
         path: "teacher/grade-submission",
