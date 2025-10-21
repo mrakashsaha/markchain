@@ -6,6 +6,7 @@ import LoadingSpiner from "../../../components/LoadingSpiner";
 import CustomToast from "../../../Toast/CustomToast";
 import Swal from "sweetalert2";
 import { AuthContext } from "../../../contextAPI/AuthContext";
+import { getContract } from "../../../hook/useContract";
 
 const THEORY_SCHEME = {
   fields: [
@@ -59,6 +60,7 @@ const SubmitGrades = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
+  const [contractLoader, setContractLoader] = useState(false);
 
   // { [enrollmentId]: { fieldKey: number | "" } }
   const [marksMap, setMarksMap] = useState({});
@@ -204,7 +206,7 @@ const SubmitGrades = () => {
             obj[f.key] = Number(m[f.key]);
             return obj;
           }, {}),
-          total,              
+          total,
           letterGrade: letter,
           gradePoints: points,
         },
@@ -212,11 +214,11 @@ const SubmitGrades = () => {
       },
 
       recipients: [
-        { 
+        {
           id: userInfo?.walletAddress,
           publicKey: userInfo?.publicKey,
         },
-        { 
+        {
           id: student?.studentWallet,
           publicKey: student?.studentPublicKey,
         },
@@ -224,8 +226,43 @@ const SubmitGrades = () => {
     }
 
     nodeBackend.post("/encrypt", payload)
-    .then (res=>console.log(res.data))
-    .catch(error=> console.log(error))
+      .then(async (res) => {
+        if (res.data?.cid) {
+          try {
+            setContractLoader(true);
+            const contract = await getContract(); // assume this returns a signer-connected contract
+            if (!contract) throw new Error("Contract not found (getContract returned falsy).");
+            const tx = await contract.createSeries(
+              student.studentWallet,
+              student.enrollmentId,
+              selectedCourse?.courseCode,
+              selectedCourse?.semesterCode,
+              res.data?.cid,
+              "original submission"
+            );
+            CustomToast({ icon: "info", title: "Transaction sent waiting for confirmation..."});
+            await tx.wait();
+            setContractLoader(false);
+            CustomToast({
+              icon: "success",
+              title: `Marks submitted for ${student.studentName || student.studentWallet}`,
+            });
+            openCourse(selectedCourse); // refech current course
+          }
+          catch (err) {
+            console.error(err);
+            setContractLoader(false);
+            const message = err && err.message ? err.message : String(err);
+            CustomToast({ icon: "error", title: "Transaction failed: " + message });
+          }
+
+        }
+
+        else {
+          CustomToast({ icon: "error", title: "CID Generation Failed" })
+        }
+      })
+      .catch(error => console.log(error))
 
 
     const allData = {
@@ -256,11 +293,7 @@ const SubmitGrades = () => {
 
     console.log(allData);
 
-    CustomToast({
-      icon: "success",
-      title: `Marks submitted for ${student.studentName || student.studentWallet}`,
-    });
-    openCourse(selectedCourse); // refech current course
+
   };
 
 
@@ -432,8 +465,8 @@ const SubmitGrades = () => {
                                   </label>
                                 ))}
                                 <div className="flex md:justify-start justify-end">
-                                  <button className="btn btn-sm btn-primary" onClick={() => submitOne(s)}>
-                                    <FaPaperPlane /> Submit Marks
+                                  <button disabled={contractLoader} className="btn btn-sm btn-primary" onClick={() => submitOne(s)}>
+                                    <FaPaperPlane /> {contractLoader ? "Submiting..." : "Submit Marks"}
                                   </button>
                                 </div>
                               </div>
