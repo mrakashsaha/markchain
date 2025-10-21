@@ -13,7 +13,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.11.0",
     "daisyui": "^5.0.50",
-    "ether": "^0.0.9",
+    "ethers": "^6.15.0",
     "kubo-rpc-client": "^5.2.0",
     "localforage": "^1.10.0",
     "match-sorter": "^8.1.0",

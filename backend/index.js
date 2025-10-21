@@ -185,6 +185,8 @@ app.post('/encrypt', async (req, res) => {
             return res.status(400).json({ error: 'Missing data or recipients.' });
         }
 
+        console.log(data);
+
         // 1) Convert JSON to string
         const plaintext = Buffer.from(JSON.stringify(data), 'utf8');
 
