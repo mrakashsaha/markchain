@@ -181,10 +181,10 @@ const ContinueWithMetaMask = () => {
 
     else {
         return (
-            <div className="min-h-screen bg-[#080f25] flex items-center justify-center p-4">
-                <div className="max-w-4xl w-full">
-                    <div className="text-center mb-12">
-                        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            <div className="min-h-screen bg-[#080f25] flex items-center justify-center">
+                <div className="max-w-4xl mt-22">
+                    <div className="text-center mt-5">
+                        <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4">
                             Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">MarkChain</span>
                         </h1>
                         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
@@ -192,7 +192,7 @@ const ContinueWithMetaMask = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mt-10">
                         {/* Left Side - Features */}
                         <div className="space-y-6">
                             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-blue-400/30 transition-all duration-300">

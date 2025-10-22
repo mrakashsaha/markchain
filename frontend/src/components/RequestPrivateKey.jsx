@@ -64,6 +64,10 @@ const RequestPrivateKey = () => {
     const [copied, setCopied] = useState({ priv: false, pub: false, privPem: false, pubPem: false });
     const navigate = useNavigate();
 
+    const shortWallet = useMemo(() => {
+        return walletAddress ? walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4) : "wallet";
+    }, [walletAddress]);
+
     if (loading || !userInfo) return <LoadingSpiner />;
 
     if (userInfo?.publicKey) {
@@ -72,9 +76,6 @@ const RequestPrivateKey = () => {
         if (userInfo?.role === "teacher") return <Navigate to="/dashboard/teacher/home" />;
     }
 
-    const shortWallet = useMemo(() => {
-        return walletAddress ? walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4) : "wallet";
-    }, [walletAddress]);
 
     const handleRequestClick = () => {
         nodeBackend
@@ -147,7 +148,7 @@ const RequestPrivateKey = () => {
     };
 
     return (
-        <div className="min-h-screen bg-base-200 text-base-content mt-12 px-4 md:px-6 py-8">
+        <div className="min-h-screen bg-base-200 text-base-content mt-20 px-4 md:px-6 py-8">
             <div className="max-w-3xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
