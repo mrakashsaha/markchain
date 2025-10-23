@@ -1911,6 +1911,30 @@ async function run() {
         });
 
 
+        // After providing mark, mark a enrollment as completed
+        app.patch("/enrollment", async (req, res) => {
+            try {
+                const { isCompleted, enrollmentId } = req.body;
+
+                if (!enrollmentId || typeof isCompleted !== "boolean") {
+                    return res.status(400).json({ message: "Invalid input" });
+                }
+
+                const query = { _id: new ObjectId(enrollmentId) };
+                const updateDoc = { $set: { isCompleted: isCompleted } };
+
+                const result = await enrollmentCollection.updateOne(query, updateDoc);
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: "Enrollment not found" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: "Server error" });
+            }
+        });
 
     } finally {
         // Ensures that the client will close when you finish/error

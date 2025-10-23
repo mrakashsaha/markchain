@@ -240,14 +240,25 @@ const SubmitGrades = () => {
               res.data?.cid,
               "original submission"
             );
-            CustomToast({ icon: "info", title: "Transaction sent waiting for confirmation..."});
+            CustomToast({ icon: "info", title: "Transaction sent waiting for confirmation..." });
             await tx.wait();
-            setContractLoader(false);
-            CustomToast({
-              icon: "success",
-              title: `Marks submitted for ${student.studentName || student.studentWallet}`,
-            });
-            openCourse(selectedCourse); // refech current course
+
+            nodeBackend.patch("/enrollment", { isCompleted: true, enrollmentId: student.enrollmentId })
+              .then(res => {
+                if (res.data.modifiedCount) {
+                  openCourse(selectedCourse);
+                  setContractLoader(false);
+                  CustomToast({
+                    icon: "success",
+                    title: `Marks submitted for ${student.studentName || student.studentWallet}`,
+                  });
+                }
+                else {
+                  console.log("Nothing to change in DB")
+                }
+              })
+              .catch(error => console.log("Error while changing status of enrollment in DB", error))
+
           }
           catch (err) {
             console.error(err);
