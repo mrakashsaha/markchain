@@ -3,6 +3,7 @@ import { FaSearch, FaCheckCircle, FaTimesCircle, FaUser, FaEnvelope, FaPhone } f
 import { MdAdminPanelSettings } from "react-icons/md";
 import { nodeBackend } from "../../../axios/axiosInstance";
 import CustomToast from "../../../Toast/CustomToast";
+import { getContract } from "../../../hook/useContract";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -47,21 +48,55 @@ const ManageUsers = () => {
   };
 
   // ✅ Handle status change
-  const handleStatusChange = async (walletAddress, action) => {
-    console.log(walletAddress, action);
-    nodeBackend.patch(`/system-users?walletAddress=${walletAddress}&action=${action}`)
-      .then(res => {
-        if (res.data.modifiedCount) {
-          CustomToast({ icon: "success", title: `The user has been ${action} successfully` })
-          setSelectedUser(null);
-          fetchUsers();
+  const handleStatusChange = async (walletAddress, action, role) => {
+    console.log(walletAddress, action, role);
+    if (role === "teacher") {
+      try {
+        const contract = await getContract();
+        if (action === "approved") {
+          const result = await contract.setTeacher(walletAddress, true);
+          console.log(result)
+        }
+        if (action === "rejected") {
+          const result = await contract.setTeacher(walletAddress, false);
+          console.log(result)
         }
 
-        else {
-          CustomToast({ icon: "error", title: "Somthing went wrong" })
-        }
-      })
-      .catch(error => console.log(error))
+        nodeBackend.patch(`/system-users?walletAddress=${walletAddress}&action=${action}`)
+          .then(res => {
+            if (res.data.modifiedCount) {
+              CustomToast({ icon: "success", title: `The user has been ${action} successfully` })
+              setSelectedUser(null);
+              fetchUsers();
+            }
+
+            else {
+              CustomToast({ icon: "error", title: "Somthing went wrong" })
+            }
+          })
+          .catch(error => console.log(error))
+      }
+
+      catch (error) {
+        CustomToast({ icon: "error", title: "Somthing went wrong while changing Teacher Status" })
+        console.log(error);
+      }
+    }
+    else {
+      nodeBackend.patch(`/system-users?walletAddress=${walletAddress}&action=${action}`)
+        .then(res => {
+          if (res.data.modifiedCount) {
+            CustomToast({ icon: "success", title: `The user has been ${action} successfully` })
+            setSelectedUser(null);
+            fetchUsers();
+          }
+
+          else {
+            CustomToast({ icon: "error", title: "Somthing went wrong" })
+          }
+        })
+        .catch(error => console.log(error))
+    }
   };
 
   // ✅ Badge color by status
@@ -212,7 +247,7 @@ const ManageUsers = () => {
                 <div className="flex gap-2">
                   {selectedUser.status === "approved" && (
                     <button
-                      onClick={() => handleStatusChange(selectedUser.walletAddress, "rejected")}
+                      onClick={() => handleStatusChange(selectedUser.walletAddress, "rejected", selectedUser.role)}
                       className="btn btn-error btn-sm flex items-center gap-2"
                     >
                       <FaTimesCircle /> Reject
@@ -220,7 +255,7 @@ const ManageUsers = () => {
                   )}
                   {selectedUser.status === "rejected" && (
                     <button
-                      onClick={() => handleStatusChange(selectedUser.walletAddress, "approved")}
+                      onClick={() => handleStatusChange(selectedUser.walletAddress, "approved", selectedUser.role)}
                       className="btn btn-success btn-sm flex items-center gap-2"
                     >
                       <FaCheckCircle /> Approve
@@ -229,13 +264,13 @@ const ManageUsers = () => {
                   {selectedUser.status === "pending" && (
                     <>
                       <button
-                        onClick={() => handleStatusChange(selectedUser.walletAddress, "approved")}
+                        onClick={() => handleStatusChange(selectedUser.walletAddress, "approved", selectedUser.role)}
                         className="btn btn-success btn-sm flex items-center gap-2"
                       >
                         <FaCheckCircle /> Approve
                       </button>
                       <button
-                        onClick={() => handleStatusChange(selectedUser.walletAddress, "rejected")}
+                        onClick={() => handleStatusChange(selectedUser.walletAddress, "rejected", selectedUser.role)}
                         className="btn btn-error btn-sm flex items-center gap-2"
                       >
                         <FaTimesCircle /> Reject
