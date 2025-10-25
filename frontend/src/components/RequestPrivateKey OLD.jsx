@@ -1,10 +1,56 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { AuthContext } from "../contextAPI/AuthContext";
 import CustomToast from "../Toast/CustomToast";
-import { FaCopy, FaDownload, FaKey, FaEye, FaEyeSlash, FaInfoCircle, FaSave } from "react-icons/fa";
+import { FaCopy, FaDownload, FaEye, FaEyeSlash, FaInfoCircle, FaSave } from "react-icons/fa";
 import { nodeBackend } from "../axios/axiosInstance";
 import { Navigate, useNavigate } from "react-router-dom";
 import LoadingSpiner from "./LoadingSpiner";
+
+/* Helpers */
+const isWindows = () =>
+    typeof navigator !== "undefined" && /\bWin/i.test(navigator.platform || "");
+
+const EOL = isWindows() ? "\r\n" : "\n";
+
+// Show keys as a single line with literal \n
+const toEscapedNewlines = (s) => (s ?? "").replace(/\r?\n/g, "\\n").trim();
+
+// Optional: exact PEM (multi-line) copy, normalized to platform EOL (keeps content identical)
+const toPlatformPEM = (s) => (s ?? "").replace(/\r\n/g, "\n").replace(/\n/g, EOL);
+
+const downloadFile = (content, fileName, mimeType = "text/plain;charset=utf-8") => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+};
+
+const copyToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            return ok;
+        } catch {
+            return false;
+        }
+    }
+};
 
 const RequestPrivateKey = () => {
     const { userInfo, refreshUserInfo, loading } = useContext(AuthContext);
@@ -15,113 +61,99 @@ const RequestPrivateKey = () => {
     const [pubKey, setPubKey] = useState("");
     const [ack, setAck] = useState(false);
     const [showPriv, setShowPriv] = useState(true);
-    const [copied, setCopied] = useState({ priv: false, pub: false });
+    const [copied, setCopied] = useState({ priv: false, pub: false, privPem: false, pubPem: false });
     const navigate = useNavigate();
 
-    if (loading || !userInfo) return <LoadingSpiner></LoadingSpiner>
+    const shortWallet = useMemo(() => {
+        return walletAddress ? walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4) : "wallet";
+    }, [walletAddress]);
+
+    if (loading || !userInfo) return <LoadingSpiner />;
 
     if (userInfo?.publicKey) {
-        if (userInfo?.role === "admin") return <Navigate to="/dashboard/admin/home"></Navigate>
-        if (userInfo?.role === "student") return <Navigate to="/dashboard/student/home"></Navigate>
-        if (userInfo?.role === "teacher") return <Navigate to="/dashboard/teacher/home"></Navigate>
+        if (userInfo?.role === "admin") return <Navigate to="/dashboard/admin/home" />;
+        if (userInfo?.role === "student") return <Navigate to="/dashboard/student/home" />;
+        if (userInfo?.role === "teacher") return <Navigate to="/dashboard/teacher/home" />;
     }
 
-    const handleRequestClick = () => {
-        console.log("this button hited"); // your logic will go here later
-        nodeBackend.get("/generate-keys")
-            .then(res => {
-                console.log(res.data);
-                setGenerated(true);
-                setPrivKey(res.data?.privateKey);
-                setPubKey(res.data?.publicKey);
-                setAck(false);
 
+    const handleRequestClick = () => {
+        nodeBackend
+            .get("/generate-keys")
+            .then((res) => {
+                setGenerated(true);
+                setPrivKey(res.data?.privateKey || "");
+                setPubKey(res.data?.publicKey || "");
+                setAck(false);
             })
-            .catch(error => {
+            .catch((error) => {
                 console.log(error);
-                CustomToast({ icon: "error", title: "Key Generation Failed, See Console to Know More" })
-            })
+                CustomToast({ icon: "error", title: "Key Generation Failed, See Console to Know More" });
+            });
     };
 
-    const copy = async (text, which) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied((p) => ({ ...p, [which]: true }));
-            setTimeout(() => setCopied((p) => ({ ...p, [which]: false })), 1200);
+    const markCopied = (which) => {
+        setCopied((p) => ({ ...p, [which]: true }));
+        setTimeout(() => setCopied((p) => ({ ...p, [which]: false })), 1200);
+    };
+
+    const handleCopy = async (text, which) => {
+        const ok = await copyToClipboard(text);
+        if (ok) {
+            markCopied(which);
             CustomToast({ icon: "success", title: "Copied to clipboard" });
-        } catch {
+        } else {
             CustomToast({ icon: "error", title: "Copy failed" });
         }
     };
 
-    const downloadPrivateTxt = () => {
-        const short = walletAddress ? walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4) : "wallet";
+    // Download .txt with one-line values and blank lines as separators
+    const downloadTxtOneLine = () => {
         const content = [
             "DO NOT SHARE THIS FILE.",
             "If you lose this private key, you will lose access/control.",
             "",
             `Wallet: ${walletAddress || "N/A"}`,
-            `Public Key: ${pubKey || "N/A"}`,
-            `Private Key: ${privKey || "N/A"}`,
             "",
-            "Store it securely.",
-        ].join("\n");
+            `Public Key (1-line): ${toEscapedNewlines(pubKey) || "N/A"}`,
+            "",
+            `Private Key (1-line): ${toEscapedNewlines(privKey) || "N/A"}`,
+        ].join(EOL);
 
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `private-${short}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadFile(content, `keys-${shortWallet}.txt`, "text/plain;charset=utf-8");
     };
 
     const handleSavePublicKey = () => {
-        nodeBackend.patch("/store-public-key", { walletAddress: userInfo?.walletAddress, publicKey: pubKey })
-            .then(res => {
-                console.log(res.data)
+        // IMPORTANT: send the ORIGINAL PEM to backend (unmodified)
+        nodeBackend
+            .patch("/store-public-key", { walletAddress: userInfo?.walletAddress, publicKey: pubKey })
+            .then((res) => {
                 if (res.data.modifiedCount) {
                     refreshUserInfo();
-                    CustomToast({ icon: "success", title: "Public key Stored Sucessfully" });
-                    if (userInfo?.role === "admin") {
-                        navigate("/dashboard/admin/home");
-                    }
-
-                    else if (userInfo?.role === "student") {
-                        navigate("/dashboard/student/home")
-                    }
-                    else if (userInfo?.role === "teacher") {
-                        navigate("/dashboard/teacher/home")
-                    }
-                    else {
-                        navigate("/dashboard")
-                    }
-
-                }
-
-                else if (res.data.modifiedCount === 0 && res.data.matchedCount === 1) {
+                    CustomToast({ icon: "success", title: "Public key Stored Successfully" });
+                    if (userInfo?.role === "admin") navigate("/dashboard/admin/home");
+                    else if (userInfo?.role === "student") navigate("/dashboard/student/home");
+                    else if (userInfo?.role === "teacher") navigate("/dashboard/teacher/home");
+                    else navigate("/dashboard");
+                } else if (res.data.modifiedCount === 0 && res.data.matchedCount === 1) {
                     CustomToast({ icon: "info", title: "Public Key Already stored" });
-                }
-
-                else {
-                    CustomToast({ icon: "error", title: "Unknown error occur" });
+                } else {
+                    CustomToast({ icon: "error", title: "Unknown error occurred" });
                 }
             })
-            .catch(error => {
+            .catch((error) => {
                 console.log(error);
-                CustomToast({ icon: "error", title: "Public Key Store in the System is Failed" });
-
-            })
+                CustomToast({ icon: "error", title: "Public Key Store in the System Failed" });
+            });
     };
 
-
-
     return (
-        <div className="min-h-screen bg-base-200 text-base-content mt-12 px-4 md:px-6 py-8">
+        <div className="min-h-screen bg-base-200 text-base-content mt-20 px-4 md:px-6 py-8">
             <div className="max-w-3xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-xl md:text-2xl font-bold text-primary flex items-center gap-2">Request Private Key
+                    <h1 className="text-xl md:text-2xl font-bold text-primary flex items-center gap-2">
+                        Request Private Key
                     </h1>
                 </div>
 
@@ -134,7 +166,9 @@ const RequestPrivateKey = () => {
                             <ul className="list-disc pl-5 text-sm">
                                 <li>Your private key is generated in your browser and never leaves your device.</li>
                                 <li>Only the public key is saved to the system.</li>
-                                <li className="font-medium">If you lose the private key, you will lose control of key-protected actions.</li>
+                                <li className="font-medium">
+                                    If you lose the private key, you will lose control of key-protected actions.
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -170,14 +204,17 @@ const RequestPrivateKey = () => {
                                                 Private Key (shown once, keep it secret)
                                             </span>
                                         </label>
+
                                         <div className="flex gap-2 items-stretch">
+                                            {/* Show as one line by default */}
                                             <input
                                                 type={showPriv ? "text" : "password"}
                                                 readOnly
                                                 className="input input-bordered w-full font-mono select-all"
-                                                value={privKey}
-                                                placeholder="0x..."
+                                                value={toEscapedNewlines(privKey)}
+                                                placeholder="-----BEGIN PRIVATE KEY-----\\n..."
                                             />
+
                                             <button
                                                 className="btn btn-ghost"
                                                 onClick={() => setShowPriv((v) => !v)}
@@ -185,16 +222,43 @@ const RequestPrivateKey = () => {
                                             >
                                                 {showPriv ? <FaEyeSlash /> : <FaEye />}
                                             </button>
-                                            <button className="btn" onClick={() => copy(privKey, "priv")}>
+
+                                            {/* DEFAULT copy: one-line */}
+                                            <button
+                                                className="btn"
+                                                onClick={() => handleCopy(toEscapedNewlines(privKey), "priv")}
+                                                title="Copy 1‑line"
+                                            >
                                                 <FaCopy />
                                                 <span className="hidden sm:inline">&nbsp;Copy</span>
                                             </button>
-                                            <button className="btn btn-neutral" onClick={downloadPrivateTxt}>
+
+                                            {/* Optional: exact PEM copy for power users */}
+                                            <button
+                                                className="btn btn-ghost"
+                                                onClick={() => handleCopy(toPlatformPEM(privKey), "privPem")}
+                                                title="Copy PEM (multi‑line)"
+                                            >
+                                                <FaCopy />
+                                                <span className="hidden sm:inline">&nbsp;PEM</span>
+                                            </button>
+
+                                            {/* Download .txt with one-line values and gaps */}
+                                            <button
+                                                className="btn btn-neutral"
+                                                onClick={downloadTxtOneLine}
+                                                title="Download .txt (1‑line values)"
+                                            >
                                                 <FaDownload />
                                                 <span className="hidden sm:inline">&nbsp;Download .txt</span>
                                             </button>
                                         </div>
-                                        {copied.priv && <div className="mt-1 text-xs text-success">Copied!</div>}
+
+                                        {(copied.priv || copied.privPem) && (
+                                            <div className="mt-1 text-xs text-success">
+                                                {copied.priv ? "Copied 1‑line!" : "Copied PEM!"}
+                                            </div>
+                                        )}
                                         <div className="mt-2 text-xs text-error">
                                             Never share your private key. Keep it in a secure manager or offline storage.
                                         </div>
@@ -210,20 +274,42 @@ const RequestPrivateKey = () => {
                                                 Public Key (will be saved in the system)
                                             </span>
                                         </label>
+
                                         <div className="flex gap-2 items-stretch">
                                             <input
                                                 type="text"
                                                 readOnly
                                                 className="input input-bordered w-full font-mono select-all"
-                                                value={pubKey}
-                                                placeholder="0x..."
+                                                value={toEscapedNewlines(pubKey)}
+                                                placeholder="-----BEGIN PUBLIC KEY-----\\n..."
                                             />
-                                            <button className="btn" onClick={() => copy(pubKey, "pub")}>
+
+                                            {/* DEFAULT copy: one-line */}
+                                            <button
+                                                className="btn"
+                                                onClick={() => handleCopy(toEscapedNewlines(pubKey), "pub")}
+                                                title="Copy 1‑line"
+                                            >
                                                 <FaCopy />
                                                 <span className="hidden sm:inline">&nbsp;Copy</span>
                                             </button>
+
+                                            {/* Optional: exact PEM copy */}
+                                            <button
+                                                className="btn btn-ghost"
+                                                onClick={() => handleCopy(toPlatformPEM(pubKey), "pubPem")}
+                                                title="Copy PEM (multi‑line)"
+                                            >
+                                                <FaCopy />
+                                                <span className="hidden sm:inline">&nbsp;PEM</span>
+                                            </button>
                                         </div>
-                                        {copied.pub && <div className="mt-1 text-xs text-success">Copied!</div>}
+
+                                        {(copied.pub || copied.pubPem) && (
+                                            <div className="mt-1 text-xs text-success">
+                                                {copied.pub ? "Copied 1‑line!" : "Copied PEM!"}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -259,7 +345,7 @@ const RequestPrivateKey = () => {
 
                 {/* Footer tip */}
                 <p className="text-xs text-base-content/70">
-                    Tip: Store your private key offline storage or write it down and keep it in a secure place. Never share it.
+                    Tip: Store your private key in offline storage or a password manager. Never share it.
                 </p>
             </div>
         </div>

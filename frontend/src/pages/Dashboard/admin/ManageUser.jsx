@@ -28,8 +28,8 @@ const ManageUsers = () => {
       if (status !== "all") params.append("status", status);
       if (query) params.append("search", query);
 
-      const res = await fetch(`http://localhost:5000/system-users?${params.toString()}`);
-      const data = await res.json();
+      const res = await nodeBackend(`/system-users?${params.toString()}`)
+      const data = await res.data;
       setUsers(data);
     } catch (error) {
       console.error("Error fetching users:", error);

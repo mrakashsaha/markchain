@@ -167,7 +167,7 @@ const ContinueWithMetaMask = () => {
     }
 
     else if (account) {
-        nodeBackend.get(`userinfo?wallet=${account}`)
+        nodeBackend.get(`/userinfo?wallet=${account}`)
             .then((res) => {
                 if (res.data) {
                     navigate("/pending")
