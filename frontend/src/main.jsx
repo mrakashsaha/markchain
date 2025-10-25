@@ -19,9 +19,11 @@ import ManageAssignedCourses from './pages/Dashboard/admin/ManageAssignedCourses
 import EnrollCourses from './pages/Dashboard/student/EnrollCourses.jsx';
 import MyCourses from './pages/Dashboard/student/MyCourses.jsx';
 import SubmitGrades from './pages/Dashboard/teacher/SubmitGrades.jsx';
-import RequestPrivateKey from './components/RequestPrivateKey.jsx';
+import RequestPrivateKey from './components/RequestPrivateKey OLD.jsx';
 import SubmitMarks from './pages/Dashboard/teacher/SubmitMarks.jsx';
 import MyResult from './pages/Dashboard/student/MyResult.jsx';
+import EditGrades from './pages/Dashboard/teacher/EditGrades.jsx';
+import DetailedMarksReport from './pages/Dashboard/student/DetailedMarksReport.jsx';
 
 
 
@@ -103,6 +105,10 @@ const router = createBrowserRouter([
         path: "student/results",
         element: <MyResult></MyResult>
       },
+      {
+        path: "student/detail-report",
+        element: <DetailedMarksReport></DetailedMarksReport>
+      },
 
       // ========================= TEACHER ROUTES =========================
       {
@@ -120,6 +126,10 @@ const router = createBrowserRouter([
       {
         path: "teacher/grade-submission",
         element: <SubmitGrades></SubmitGrades>,
+      },
+      {
+        path: "teacher/edit-grade",
+        element: <EditGrades></EditGrades>
       },
     ]
   },

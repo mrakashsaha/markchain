@@ -6,7 +6,7 @@ import { MdAddTask, MdOutlineAssignmentTurnedIn, MdOutlineClass, MdOutlineManage
 import { AuthContext } from '../contextAPI/AuthContext';
 import { IoCreateOutline } from "react-icons/io5";
 import { SiGoogleclassroom } from 'react-icons/si';
-import { FaChartLine, FaUserShield, FaChalkboardTeacher, FaUserGraduate } from 'react-icons/fa';
+import { FaChartLine, FaUserShield, FaChalkboardTeacher, FaUserGraduate, FaHistory } from 'react-icons/fa';
 import { GiClassicalKnowledge } from 'react-icons/gi';
 import { PiStudent } from 'react-icons/pi';
 
@@ -144,6 +144,20 @@ const SideBar = () => {
                 <FaChartLine className='text-xl' />
                 <span>Results</span>
             </NavLink>
+
+            <NavLink 
+                to={"/dashboard/student/detail-report"} 
+                className={({ isActive }) => 
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
+                        isActive 
+                            ? 'bg-green-50 text-green-600 border-green-600 font-semibold' 
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
+                    }`
+                }
+            >
+                <FaHistory className='text-xl' />
+                <span>Detailed Report</span>
+            </NavLink>
         </>
     );
 
@@ -203,6 +217,20 @@ const SideBar = () => {
             >
                 <MdOutlineAssignmentTurnedIn className='text-xl' />
                 <span>Submit Grades</span>
+            </NavLink>
+
+            <NavLink 
+                to={"/dashboard/teacher/edit-grade"} 
+                className={({ isActive }) => 
+                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-l-4 ${
+                        isActive 
+                            ? 'bg-purple-50 text-purple-600 border-purple-600 font-semibold' 
+                            : 'text-gray-200 hover:bg-gray-50 hover:text-gray-900 border-transparent hover:border-gray-300'
+                    }`
+                }
+            >
+                <MdOutlineAssignmentTurnedIn className='text-xl' />
+                <span>Edit Grades</span>
             </NavLink>
         </>
     );
