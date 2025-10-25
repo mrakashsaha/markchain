@@ -377,11 +377,16 @@ async function run() {
 
         // Geting loged in userinformatin
         app.get("/userInfo", async (req, res) => {
-
-            const query = { walletAddress: req.query.wallet }
+            // Convert all query keys and values to lowercase
+            const lowerQuery = {};
+            for (const [key, value] of Object.entries(req.query)) {
+                lowerQuery[key.toLowerCase()] = String(value).toLowerCase();
+            }
+            // Example: wallet -> lowercase walletAddress
+            const query = { walletAddress: lowerQuery.wallet };
             const result = await usersCollection.findOne(query);
             res.send(result);
-        })
+        });
 
         // register a new user to a system
         app.post("/register", async (req, res) => {
@@ -1933,6 +1938,20 @@ async function run() {
             } catch (error) {
                 console.error(error);
                 res.status(500).json({ message: "Server error" });
+            }
+        });
+
+
+
+        // Get apis to intregate data with SmartContract
+
+        app.get("/course/:code", async (req, res) => {
+            const { code } = req.params;
+            const course = await coursesCollection.findOne({ courseCode: code });
+            if (course) {
+                res.send({courseCode: course.courseCode, courseTitle:course.courseTitle});
+            } else {
+                res.status(404).send({ message: "Course not found" });
             }
         });
 
