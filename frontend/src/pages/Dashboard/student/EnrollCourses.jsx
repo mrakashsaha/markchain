@@ -32,8 +32,8 @@ const EnrollCourses = () => {
       const res = await nodeBackend.get(`/offer-courses?${params.toString()}`);
       setCourses(res.data);
     } catch (error) {
-      console.error("Failed to fetch courses:", error);
-      CustomToast({ icon: "error", title: "Failed to fetch courses" });
+      console.error("No offered courses available.", error);
+      CustomToast({ icon: "info", title: "No offered courses available." });
     } finally {
       setLoading(false);
     }
